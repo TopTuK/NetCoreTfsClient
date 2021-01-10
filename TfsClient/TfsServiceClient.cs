@@ -29,7 +29,7 @@ namespace TfsClient
 
     internal class TfsServiceClient : ITfsServiceClient
     {
-        private readonly IHttpService _httpService);
+        private readonly IHttpService _httpService;
         private string _tfsUrl;
         private string _tfsUrlPrj;
 
