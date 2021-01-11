@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using TfsClient.HttpService;
+using TfsClient.Utils;
 
 namespace TfsClient
 {
@@ -39,6 +41,8 @@ namespace TfsClient
 
         public TfsServiceClient(IHttpService httpService, string serverUrl, string projectName)
         {
+            _httpService = httpService;
+
             // ServerUrl should ends with '/'
             ServerUrl = serverUrl.EndsWith("/")
                 ? serverUrl
@@ -78,15 +82,63 @@ namespace TfsClient
             _httpService.Authentificate(userName, userPassword);
         }
 
+        private IEnumerable<ITfsWorkitem> GetTfsItems(string requstUrl, bool underProject = false)
+        {
+            var url = underProject
+                ? (_tfsUrlPrj + requstUrl)
+                : (_tfsUrl + requstUrl);
+
+            var response = _httpService.Get(url);
+            if((response != null) && (response.IsSuccess))
+            {
+                var json = response.Content;
+            }
+
+            return null;
+        }
+
         public ITfsWorkitem GetSingleWorkitem(int id, IEnumerable<string> fields = null)
         {
-            throw new NotImplementedException();
+            var flds = fields != null ? $"&fields={string.Join(",", fields)}" : "";
+            var requestUrl = $"wit/workitems?ids={id}{flds}&expand=all&api-version=1.0";
+
+            IEnumerable<ITfsWorkitem> items;
+
+            try
+            {
+                items = GetTfsItems(requestUrl);
+            }
+            catch(Exception ex)
+            {
+                throw ex;
+            }
+
+            return items?.FirstOrDefault();
         }
 
         public IEnumerable<ITfsWorkitem> GetWorkitems(IEnumerable<int> ids,
             IEnumerable<string> fields = null, int batchSize = 50)
         {
-            throw new NotImplementedException();
+            List<ITfsWorkitem> resultItems = new List<ITfsWorkitem>(ids.Count());
+
+            var flds = fields != null ? $"&fields={string.Join(",", fields)}" : "";
+
+            foreach (var items in ids.Batch(batchSize))
+            {                
+                var requestUrl = $"wit/workitems?ids={string.Join(",", items)}{flds}&expand=all&api-version=1.0";
+
+                try
+                {
+                    var tfsItems = GetTfsItems(requestUrl);
+                    resultItems.AddRange(tfsItems);
+                }
+                catch(Exception ex)
+                {
+                    throw ex;
+                }
+            }
+
+            return resultItems;
         }
     }
 }
