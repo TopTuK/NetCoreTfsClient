@@ -60,7 +60,7 @@ namespace TfsClient.HttpService
 
         public void Authentificate(string userName, string userPassword)
         {
-            _restClient.Authenticator = new HttpBasicAuthenticator(userName, userPassword);
+            _restClient.Authenticator = new NtlmAuthenticator(userName, userPassword);
         }
 
         private IRestRequest MakeRequest(string resource,
