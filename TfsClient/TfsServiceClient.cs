@@ -48,6 +48,8 @@ namespace TfsClient
                 ? serverUrl
                 : $"{serverUrl}/";
 
+            _httpService.BaseUrl = new Uri(ServerUrl);
+
             // Closure function to get Collection and Project
             (string, string) GetCollectionAndProject()
             {
@@ -69,11 +71,11 @@ namespace TfsClient
 
             // Remove part after / in project-name, like DefaultCollection/MyProject => DefaultCollection
             // API responce only in Project, without subproject
-            _tfsUrl = $"{ServerUrl}{Collection}/_apis/";
+            _tfsUrl = $"{Collection}/_apis/";
 
             // API response only for Collection/Project
-            _tfsUrlPrj = Project == null
-                ? $"{ServerUrl}{Collection}/{Project}/_apis/"
+            _tfsUrlPrj = Project != null
+                ? $"{Collection}/{Project}/_apis/"
                 : _tfsUrl;
         }
 
