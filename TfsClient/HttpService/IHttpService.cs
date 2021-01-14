@@ -16,7 +16,7 @@ namespace TfsClient.HttpService
         string ContentType { get; }
         bool IsEmptyCookies { get; }
         IReadOnlyDictionary<string,string> Cookies { get; }
-        string Content { get; }
+        string Content { get; } 
     }
 
     public interface IHttpService

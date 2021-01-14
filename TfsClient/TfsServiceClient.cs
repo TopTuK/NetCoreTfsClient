@@ -91,12 +91,15 @@ namespace TfsClient
                 : (_tfsUrl + requstUrl);
 
             var response = _httpService.Get(url);
+
+            IEnumerable<ITfsWorkitem> items = null;
             if((response != null) && (response.IsSuccess))
             {
                 var json = response.Content;
+                items = TfsWorkitemFactory.FromJsonItems(json);
             }
 
-            return null;
+            return items;
         }
 
         public ITfsWorkitem GetSingleWorkitem(int id, IEnumerable<string> fields = null)
