@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json.Linq;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -22,6 +23,13 @@ namespace TfsClient
 
         public static IEnumerable<ITfsWorkitem> FromJsonItems(string jsonItems)
         {
+            var jsonObj = JObject.Parse(jsonItems);
+
+            if(jsonObj.ContainsKey("value"))
+            {
+
+            }
+
             throw new NotImplementedException();
         }
 
