@@ -9,27 +9,36 @@ namespace TfsClient
     {
         private class TfsWorkitem : ITfsWorkitem
         {
-            public WorkItemType ItemType => throw new NotImplementedException();
+            public WorkItemType ItemType { get; }
             public int Id => throw new NotImplementedException();
             public string Title => throw new NotImplementedException();
             public string Description => throw new NotImplementedException();
             public IReadOnlyDictionary<string, string> Fields => throw new NotImplementedException();
-        }
+            public string Url => throw new NotImplementedException();
 
-        public static ITfsWorkitem FromJson(string json)
-        {
-            throw new NotImplementedException();
+            public TfsWorkitem(JToken jsonItem)
+            {
+
+            }
         }
 
         public static IEnumerable<ITfsWorkitem> FromJsonItems(string jsonItems)
         {
-            var jsonObj = JObject.Parse(jsonItems);
+            List<ITfsWorkitem> items = null;
 
+            var jsonObj = JObject.Parse(jsonItems);
             if(jsonObj.ContainsKey("value"))
             {
+                int itemsCount = jsonObj["count"].ToObject<int>();
+
+                items = new List<ITfsWorkitem>(itemsCount);
+                foreach(var jsonItem in jsonObj["value"])
+                {
+                    items.Add(new TfsWorkitem(jsonItem));
+                }
             }
 
-            throw new NotImplementedException();
+            return items;
         }
 
         public static ITfsWorkitem CreateNewItem()
