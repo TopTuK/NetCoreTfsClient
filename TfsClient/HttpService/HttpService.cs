@@ -64,8 +64,8 @@ namespace TfsClient.HttpService
         }
 
         private IRestRequest MakeRequest(string resource,
-            IDictionary<string, string> customParams = null,
-            IDictionary<string, string> customHeaders = null)
+            IReadOnlyDictionary<string, string> customParams = null,
+            IReadOnlyDictionary<string, string> customHeaders = null)
         {
             var request = new RestRequest(resource);
 
@@ -89,8 +89,8 @@ namespace TfsClient.HttpService
         }
 
         public IHttpResponse Get(string resource, 
-            IDictionary<string, string> customParams = null, 
-            IDictionary<string, string> customHeaders = null)
+            IReadOnlyDictionary<string, string> customParams = null,
+            IReadOnlyDictionary<string, string> customHeaders = null)
         {
             var request = MakeRequest(resource, customParams, customHeaders);
             var response = _restClient.Get(request);
@@ -98,9 +98,9 @@ namespace TfsClient.HttpService
             return new RestHttpResponse(response);
         }
 
-        public async Task<IHttpResponse> GetAsync(string resource, 
-            IDictionary<string, string> customParams = null, 
-            IDictionary<string, string> customHeaders = null)
+        public async Task<IHttpResponse> GetAsync(string resource,
+            IReadOnlyDictionary<string, string> customParams = null,
+            IReadOnlyDictionary<string, string> customHeaders = null)
         {
             var request = MakeRequest(resource, customParams, customHeaders);
             request.Method = Method.GET;

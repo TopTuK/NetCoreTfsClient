@@ -19,9 +19,10 @@ namespace TfsClientApp
             Console.Write("Password: ");
             var userPassword = Console.ReadLine();
 
-            var tfsService = TfsServiceClientFactory.CreateTfsServiceClient(tfsServerUrl, tfsCollection, 
+            var tfsService = TfsServiceClientFactory.CreateTfsServiceClient(tfsServerUrl, tfsCollection,
                 userName, userPassword);
-            var item = tfsService.GetSingleWorkitem(1);
+
+            var item = tfsService.GetSingleWorkitem(100);
 
             Console.WriteLine("Meow!");
         }

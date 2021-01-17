@@ -27,7 +27,6 @@ namespace TfsClient
 
             if(jsonObj.ContainsKey("value"))
             {
-
             }
 
             throw new NotImplementedException();

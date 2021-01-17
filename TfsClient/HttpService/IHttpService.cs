@@ -26,10 +26,10 @@ namespace TfsClient.HttpService
         void Authentificate(string userName, string userPassword);
 
         IHttpResponse Get(string resource,
-            IDictionary<string, string> customParams = null,
-            IDictionary<string, string> customHeaders = null);
+            IReadOnlyDictionary<string, string> customParams = null,
+            IReadOnlyDictionary<string, string> customHeaders = null);
         Task<IHttpResponse> GetAsync(string resource,
-            IDictionary<string, string> customParams = null,
-            IDictionary<string, string> customHeaders = null);
+            IReadOnlyDictionary<string, string> customParams = null,
+            IReadOnlyDictionary<string, string> customHeaders = null);
     }
 }

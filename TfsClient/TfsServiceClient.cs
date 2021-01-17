@@ -31,6 +31,8 @@ namespace TfsClient
 
     internal class TfsServiceClient : ITfsServiceClient
     {
+        private const string GET_WORKITEM_URL = @"wit/workitems";
+
         private readonly IHttpService _httpService;
         private string _tfsUrl;
         private string _tfsUrlPrj;
@@ -84,19 +86,20 @@ namespace TfsClient
             _httpService.Authentificate(userName, userPassword);
         }
 
-        private IEnumerable<ITfsWorkitem> GetTfsItems(string requstUrl, bool underProject = false)
+        private IEnumerable<ITfsWorkitem> GetTfsItems(string requstUrl,
+            IReadOnlyDictionary<String, string> requestParams = null,
+            bool underProject = false)
         {
             var url = underProject
                 ? (_tfsUrlPrj + requstUrl)
                 : (_tfsUrl + requstUrl);
 
-            var response = _httpService.Get(url);
+            var response = _httpService.Get(url, requestParams);
 
             IEnumerable<ITfsWorkitem> items = null;
             if((response != null) && (response.IsSuccess))
             {
-                var json = response.Content;
-                items = TfsWorkitemFactory.FromJsonItems(json);
+                items = TfsWorkitemFactory.FromJsonItems(response.Content);
             }
 
             return items;
@@ -104,14 +107,23 @@ namespace TfsClient
 
         public ITfsWorkitem GetSingleWorkitem(int id, IEnumerable<string> fields = null)
         {
-            var flds = fields != null ? $"&fields={string.Join(",", fields)}" : "";
-            var requestUrl = $"wit/workitems?ids={id}{flds}&expand=all&api-version=1.0";
+            var requestParams = new Dictionary<string, string>
+            {
+                { "expand", "all" },
+                { "api-version", "1.0" },
+                { "ids", $"{id}" }
+            };
+
+            if(fields != null)
+            {
+                var flds = string.Join(",", fields);
+                requestParams.Add("fields", flds);
+            }
 
             IEnumerable<ITfsWorkitem> items;
-
             try
             {
-                items = GetTfsItems(requestUrl);
+                items = GetTfsItems(GET_WORKITEM_URL, requestParams);
             }
             catch(Exception ex)
             {
@@ -124,17 +136,29 @@ namespace TfsClient
         public IEnumerable<ITfsWorkitem> GetWorkitems(IEnumerable<int> ids,
             IEnumerable<string> fields = null, int batchSize = 50)
         {
+            var defaultRequestParams = new Dictionary<string, string>
+            {
+                { "expand", "all" },
+                { "api-version", "1.0" }
+            };
+
+            if (fields != null)
+            {
+                var flds = string.Join(",", fields);
+                defaultRequestParams.Add("fields", flds);
+            }
+
             List<ITfsWorkitem> resultItems = new List<ITfsWorkitem>(ids.Count());
-
-            var flds = fields != null ? $"&fields={string.Join(",", fields)}" : "";
-
             foreach (var items in ids.Batch(batchSize))
-            {                
-                var requestUrl = $"wit/workitems?ids={string.Join(",", items)}{flds}&expand=all&api-version=1.0";
+            {
+                var requestParams = new Dictionary<string, string>(defaultRequestParams)
+                {
+                    { "ids", string.Join(",", items) }
+                };
 
                 try
                 {
-                    var tfsItems = GetTfsItems(requestUrl);
+                    var tfsItems = GetTfsItems(GET_WORKITEM_URL, requestParams);
                     resultItems.AddRange(tfsItems);
                 }
                 catch(Exception ex)
