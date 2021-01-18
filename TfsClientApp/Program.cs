@@ -22,7 +22,8 @@ namespace TfsClientApp
             var tfsService = TfsServiceClientFactory.CreateTfsServiceClient(tfsServerUrl, tfsCollection,
                 userName, userPassword);
 
-            var item = tfsService.GetSingleWorkitem(100);
+            var item = tfsService.GetSingleWorkitem(4615484);
+            Console.WriteLine($"{item.Id} {item.Title}");
 
             Console.WriteLine("Meow!");
         }

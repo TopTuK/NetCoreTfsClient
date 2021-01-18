@@ -7,18 +7,22 @@ namespace TfsClient
 {
     internal static class TfsWorkitemFactory
     {
+        private static readonly IReadOnlyDictionary<string, WorkItemType> WorkItemTypeMap = new Dictionary<string, WorkItemType>()
+        {
+
+        };
+
         private class TfsWorkitem : ITfsWorkitem
         {
             public WorkItemType ItemType { get; }
-            public int Id => throw new NotImplementedException();
-            public string Title => throw new NotImplementedException();
-            public string Description => throw new NotImplementedException();
-            public IReadOnlyDictionary<string, string> Fields => throw new NotImplementedException();
-            public string Url => throw new NotImplementedException();
+            public int Id { get; }
+            public IReadOnlyDictionary<string, string> Fields { get; }
+            public string Url { get; }
 
             public TfsWorkitem(JToken jsonItem)
             {
-
+                Id = jsonItem["id"].ToObject<int>();
+                Url = jsonItem["url"].ToObject<string>();
             }
         }
 

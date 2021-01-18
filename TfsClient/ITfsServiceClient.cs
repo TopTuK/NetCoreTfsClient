@@ -15,8 +15,6 @@ namespace TfsClient
     {
         WorkItemType ItemType { get; }
         int Id { get; }
-        string Title { get; }
-        string Description { get; }
         string Url { get; }
 
         IReadOnlyDictionary<string, string> Fields { get; }
