@@ -7,6 +7,13 @@ using TfsClient.Utils;
 
 namespace TfsClient
 {
+    public enum TfsItemUpdateResult
+    {
+        FAIL_UPDATE = 0,
+        NOTHING_UPDATE,
+        SUCCESS_UPDATE
+    }
+
     public static class TfsServiceClientFactory
     {
         public static ITfsServiceClient CreateTfsServiceClient(string serverUrl, string projectName,
@@ -34,8 +41,8 @@ namespace TfsClient
         private const string GET_WORKITEM_URL = @"wit/workitems";
 
         private readonly IHttpService _httpService;
-        private string _tfsUrl;
-        private string _tfsUrlPrj;
+        private readonly string _tfsUrl;
+        private readonly string _tfsUrlPrj;
 
         public string ServerUrl { get; }
         public string Collection { get; }
@@ -87,7 +94,7 @@ namespace TfsClient
         }
 
         private IEnumerable<ITfsWorkitem> GetTfsItems(string requstUrl,
-            IReadOnlyDictionary<String, string> requestParams = null,
+            IReadOnlyDictionary<string, string> requestParams = null,
             bool underProject = false)
         {
             var url = underProject
@@ -96,13 +103,14 @@ namespace TfsClient
 
             var response = _httpService.Get(url, requestParams);
 
-            IEnumerable<ITfsWorkitem> items = null;
             if((response != null) && (response.IsSuccess))
             {
-                items = TfsWorkitemFactory.FromJsonItems(response.Content);
+                var items = TfsWorkitemFactory.FromJson(this, response.Content);
+                
+                return items;
             }
 
-            return items;
+            return null;
         }
 
         public ITfsWorkitem GetSingleWorkitem(int id, IEnumerable<string> fields = null)
@@ -120,7 +128,7 @@ namespace TfsClient
                 requestParams.Add("fields", flds);
             }
 
-            IEnumerable<ITfsWorkitem> items;
+            IEnumerable<ITfsWorkitem> items = null;
             try
             {
                 items = GetTfsItems(GET_WORKITEM_URL, requestParams);

@@ -4,22 +4,6 @@ using System.Text;
 
 namespace TfsClient
 {
-    public enum WorkItemType
-    {
-        Requirement = 0,
-        ChangeRequest,
-        Bug
-    };
-
-    public interface ITfsWorkitem
-    {
-        WorkItemType ItemType { get; }
-        int Id { get; }
-        string Url { get; }
-
-        IReadOnlyDictionary<string, string> Fields { get; }
-    }
-
     public interface ITfsServiceClient
     {
         string ServerUrl { get; }

@@ -111,8 +111,12 @@ namespace TfsClient.Tests.TfsClientTests.HttpServiceMock
             var httpServiceMock = new Mock<IHttpService>();
 
             httpServiceMock
-                .Setup(mock => mock.Get(It.IsAny<string>(), It.IsAny<IDictionary<string, string>>(), It.IsAny<IDictionary<string, string>>()))
-                .Returns<IHttpResponse>(resp => _singleItemResponse);
+                .Setup(mock => mock.Get(
+                    It.IsAny<string>(),
+                    It.IsAny<IReadOnlyDictionary<string, string>>(),
+                    It.IsAny<IReadOnlyDictionary<string, string>>()
+                 ))
+                .Returns(_singleItemResponse);
 
             return httpServiceMock;
         }
