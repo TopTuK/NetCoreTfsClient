@@ -16,14 +16,52 @@ namespace TfsClient
             { "Bug", WorkItemType.Bug }
         };
 
+        private class TfsWorkitemRelation : ITfsWorkitemRelation
+        {
+            public WorkitemRelationType RelationType { get; }
+            public string RelationTypeName { get; }
+            public string Url { get; }
+
+            public TfsWorkitemRelation(JToken jsonRelation)
+            {
+                Url = jsonRelation["url"].Value<string>();
+                RelationTypeName = jsonRelation["rel"].Value<string>();
+
+                switch(RelationTypeName)
+                {
+                    case "System.LinkTypes.Hierarchy-Reverse":
+                        RelationType = WorkitemRelationType.Parent;
+                        break;
+                    case "System.LinkTypes.Hierarchy-Forward":
+                        RelationType = WorkitemRelationType.Child;
+                        break;
+                    case "Microsoft.VSTS.Common.Affects-Forward":
+                        RelationType = WorkitemRelationType.Affects;
+                        break;
+                    case "Microsoft.VSTS.Common.Affects-Reverse":
+                        RelationType = WorkitemRelationType.AffectedBy;
+                        break;
+                    case "System.LinkTypes.Related":
+                        RelationType = WorkitemRelationType.Related;
+                        break;
+                    default:
+                        RelationType = WorkitemRelationType.Unknown;
+                        break;
+                }
+            }
+        }
+
         private class TfsWorkitem : ITfsWorkitem
         {
             private ITfsServiceClient _tfsServiceClient;
+            private List<ITfsWorkitemRelation> _relations = new List<ITfsWorkitemRelation>();
+
             public WorkItemType ItemType { get; }
             public string ItemTypeName { get; }
             public string Url { get; }
             public int Id { get; }
             public IDictionary<string, string> Fields { get; } = new Dictionary<string, string>();
+            public IReadOnlyCollection<ITfsWorkitemRelation> Relations => _relations;
 
             public TfsWorkitem(ITfsServiceClient tfsServiceClient, JToken jsonItem)
             {
@@ -49,15 +87,21 @@ namespace TfsClient
                                 ItemType = WorkItemTypeMap[ItemTypeName];
                             }
                         }
-                        
-                        if (fieldKey != "System.Id") Fields.Add(field.Key, field.Value?.ToString());
+                        else
+                        {
+                            if (fieldKey != "System.Id") Fields.Add(field.Key, field.Value?.ToString());
+                        }
                     }
                 }
-            }
 
-            public TfsItemUpdateResult Save()
-            {
-                throw new NotImplementedException();
+                var jsonRelations = jsonItem["relations"]?.ToObject<JArray>();
+                if((jsonRelations != null) && (jsonRelations.HasValues))
+                {
+                    foreach(var jsonRelation in jsonRelations)
+                    {
+                        _relations.Add(new TfsWorkitemRelation(jsonRelation));
+                    }
+                }
             }
         }
 

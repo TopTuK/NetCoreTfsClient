@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using TfsClient.Tests.TfsClientTests.HttpServiceMock;
 using Xunit;
@@ -16,7 +17,7 @@ namespace TfsClient.Tests.TfsClientTests
         private readonly string _tfsServerUrl = @"https://tfs-tfs/tfs";
         private readonly string _tfsProjectName = @"DefaultCollection/TestProject";
 
-        [Fact(DisplayName = "TfsClient GetSingleItemTest")]
+        [Fact(DisplayName = "TfsClient GetSingleItem Test")]
         public void TfsClientGetSingleWorkitemTest()
         {
             // Arrange
@@ -32,16 +33,20 @@ namespace TfsClient.Tests.TfsClientTests
             Assert.NotNull(tfsItem);
         }
 
-        [Fact(Skip = "Not implemented")]
+        [Fact(DisplayName = "TfsClient GetWorkitems Test Returns 2 Workitems")]
         public void TfsClientGetMultipyItemsTest()
         {
             // Arrange
-            var tfsService = TfsServiceClientFactory.CreateTfsServiceClient(null, _tfsServerUrl, _tfsProjectName);
+            var httpServiceMock = HttpServiceMockFactory
+                .CreateMultipyItemHttpServiceMock();
+            var tfsService = TfsServiceClientFactory.CreateTfsServiceClient(httpServiceMock.Object, _tfsServerUrl, _tfsProjectName);
 
             // Act
             var tfsItems = tfsService.GetWorkitems(WORKITEM_IDS);
 
             // Assert
+            Assert.NotNull(tfsItems);
+            Assert.Equal<int>(2, tfsItems.Count());
         }
 
         [Fact(Skip = "Not implemented")]

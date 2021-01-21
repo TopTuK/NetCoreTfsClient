@@ -117,8 +117,8 @@ namespace TfsClient
         {
             var requestParams = new Dictionary<string, string>
             {
-                { "expand", "all" },
-                { "api-version", "1.0" },
+                { "$expand", "all" },
+                { "api-version", "6.0" },
                 { "ids", $"{id}" }
             };
 
@@ -146,8 +146,8 @@ namespace TfsClient
         {
             var defaultRequestParams = new Dictionary<string, string>
             {
-                { "expand", "all" },
-                { "api-version", "1.0" }
+                { "$expand", "all" },
+                { "api-version", "6.0" }
             };
 
             if (fields != null)

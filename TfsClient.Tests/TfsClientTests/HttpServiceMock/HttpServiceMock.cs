@@ -30,10 +30,10 @@ namespace TfsClient.Tests.TfsClientTests.HttpServiceMock
             ""count"": 2,
             ""value"": [
             {
-                ""id"": 100500,
+                ""id"": 100501,
                 ""rev"": 1,
                 ""fields"": {
-                    ""System.Id"": 100500,
+                    ""System.Id"": 100501,
                     ""System.WorkItemType"": ""Requirement"",
                     ""System.Title"": ""Tfs test workitem - Requirement"",
                     ""System.Description"": ""Description of test workitem""
@@ -41,10 +41,10 @@ namespace TfsClient.Tests.TfsClientTests.HttpServiceMock
                 ""url"": ""https://tfs-tfs/tfs/_apis/wit/workItems/100500""
             },
             {
-                ""id"": 100500,
+                ""id"": 100502,
                 ""rev"": 1,
                 ""fields"": {
-                    ""System.Id"": 100500,
+                    ""System.Id"": 100502,
                     ""System.WorkItemType"": ""Requirement"",
                     ""System.Title"": ""Tfs test workitem - Requirement"",
                     ""System.Description"": ""Description of test workitem""
@@ -117,6 +117,21 @@ namespace TfsClient.Tests.TfsClientTests.HttpServiceMock
                     It.IsAny<IReadOnlyDictionary<string, string>>()
                  ))
                 .Returns(_singleItemResponse);
+
+            return httpServiceMock;
+        }
+
+        public static Mock<IHttpService> CreateMultipyItemHttpServiceMock()
+        {
+            var httpServiceMock = new Mock<IHttpService>();
+
+            httpServiceMock
+                .Setup(mock => mock.Get(
+                    It.IsAny<string>(),
+                    It.IsAny<IReadOnlyDictionary<string, string>>(),
+                    It.IsAny<IReadOnlyDictionary<string, string>>()
+                 ))
+                .Returns(_multipyItemsResponse);
 
             return httpServiceMock;
         }
