@@ -108,5 +108,47 @@ namespace TfsClient.HttpService
 
             return new RestHttpResponse(response);
         }
+
+        public IHttpResponse Post(string resource,
+            IReadOnlyDictionary<string, string> customParams = null,
+            IReadOnlyDictionary<string, string> customHeaders = null)
+        {
+            var request = MakeRequest(resource, customParams, customHeaders);
+            var response = _restClient.Post(request);
+
+            return new RestHttpResponse(response);
+        }
+
+        public async Task<IHttpResponse> PostAsync(string resource,
+            IReadOnlyDictionary<string, string> customParams = null,
+            IReadOnlyDictionary<string, string> customHeaders = null)
+        {
+            var request = MakeRequest(resource, customParams, customHeaders);
+            request.Method = Method.POST;
+            var response = await _restClient.ExecuteAsync(request);
+
+            return new RestHttpResponse(response);
+        }
+
+        public IHttpResponse Patch(string resource,
+            IReadOnlyDictionary<string, string> customParams = null,
+            IReadOnlyDictionary<string, string> customHeaders = null)
+        {
+            var request = MakeRequest(resource, customParams, customHeaders);
+            var response = _restClient.Patch(request);
+
+            return new RestHttpResponse(response);
+        }
+
+        public async Task<IHttpResponse> PatchAsync(string resource,
+            IReadOnlyDictionary<string, string> customParams = null,
+            IReadOnlyDictionary<string, string> customHeaders = null)
+        {
+            var request = MakeRequest(resource, customParams, customHeaders);
+            request.Method = Method.PATCH;
+            var response = await _restClient.ExecuteAsync(request);
+
+            return new RestHttpResponse(response);
+        }
     }
 }

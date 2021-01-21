@@ -31,5 +31,19 @@ namespace TfsClient.HttpService
         Task<IHttpResponse> GetAsync(string resource,
             IReadOnlyDictionary<string, string> customParams = null,
             IReadOnlyDictionary<string, string> customHeaders = null);
+
+        IHttpResponse Post(string resource,
+            IReadOnlyDictionary<string, string> customParams = null,
+            IReadOnlyDictionary<string, string> customHeaders = null);
+        Task<IHttpResponse> PostAsync(string resource,
+            IReadOnlyDictionary<string, string> customParams = null,
+            IReadOnlyDictionary<string, string> customHeaders = null);
+
+        IHttpResponse Patch(string resource,
+            IReadOnlyDictionary<string, string> customParams = null,
+            IReadOnlyDictionary<string, string> customHeaders = null);
+        Task<IHttpResponse> PatchAsync(string resource,
+            IReadOnlyDictionary<string, string> customParams = null,
+            IReadOnlyDictionary<string, string> customHeaders = null);
     }
 }
