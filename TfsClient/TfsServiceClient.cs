@@ -115,6 +115,7 @@ namespace TfsClient
 
         public ITfsWorkitem GetSingleWorkitem(int id, IEnumerable<string> fields = null)
         {
+            // We should always request multlipy items for correct parsing purposes
             var requestParams = new Dictionary<string, string>
             {
                 { "$expand", "all" },

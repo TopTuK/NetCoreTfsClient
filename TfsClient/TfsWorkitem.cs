@@ -54,14 +54,39 @@ namespace TfsClient
         private class TfsWorkitem : ITfsWorkitem
         {
             private ITfsServiceClient _tfsServiceClient;
+            private Dictionary<string, JToken> _fields = new Dictionary<string, JToken>();
             private List<ITfsWorkitemRelation> _relations = new List<ITfsWorkitemRelation>();
 
             public WorkItemType ItemType { get; }
             public string ItemTypeName { get; }
             public string Url { get; }
             public int Id { get; }
-            public IDictionary<string, string> Fields { get; } = new Dictionary<string, string>();
             public IReadOnlyCollection<ITfsWorkitemRelation> Relations => _relations;
+
+            public string this[string fieldName] 
+            {
+                get
+                {
+                    if (_fields.TryGetValue(fieldName, out JToken jField))
+                    {
+                        return jField.ToObject<string>();
+                    }
+
+                    return null;
+                } 
+                set
+                {
+                    var jField = new JObject(value);
+                    if(_fields.ContainsKey(fieldName))
+                    {
+                        _fields[fieldName] = jField;
+                    }
+                    else
+                    {
+                        _fields.Add(fieldName, jField);
+                    }
+                }
+            }
 
             public TfsWorkitem(ITfsServiceClient tfsServiceClient, JToken jsonItem)
             {
@@ -89,7 +114,10 @@ namespace TfsClient
                         }
                         else
                         {
-                            if (fieldKey != "System.Id") Fields.Add(field.Key, field.Value?.ToString());
+                            if (fieldKey != "System.Id")
+                            {
+                                _fields.Add(fieldKey, field.Value);
+                            }
                         }
                     }
                 }

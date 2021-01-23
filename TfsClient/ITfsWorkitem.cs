@@ -38,7 +38,8 @@ namespace TfsClient
         string Url { get; }
         int Id { get; }
 
-        IDictionary<string, string> Fields { get; }
+        string this[string fieldName] { get; set; }
+
         IReadOnlyCollection<ITfsWorkitemRelation> Relations { get; }
     }
 }
