@@ -38,12 +38,24 @@ namespace TfsClient.HttpService
         Task<IHttpResponse> PostAsync(string resource,
             IReadOnlyDictionary<string, string> customParams = null,
             IReadOnlyDictionary<string, string> customHeaders = null);
+        IHttpResponse PostJson(string resource,
+            object requestBody,
+            IReadOnlyDictionary<string, string> customHeaders = null);
+        Task<IHttpResponse> PostJsonAsync(string resource,
+            object requestBody,
+            IReadOnlyDictionary<string, string> customHeaders = null);
 
         IHttpResponse Patch(string resource,
             IReadOnlyDictionary<string, string> customParams = null,
             IReadOnlyDictionary<string, string> customHeaders = null);
         Task<IHttpResponse> PatchAsync(string resource,
             IReadOnlyDictionary<string, string> customParams = null,
+            IReadOnlyDictionary<string, string> customHeaders = null);
+        IHttpResponse PatchJson(string resource,
+            object requestBody,
+            IReadOnlyDictionary<string, string> customHeaders = null);
+        Task<IHttpResponse> PatchJsonAsync(string resource,
+            object requestBody,
             IReadOnlyDictionary<string, string> customHeaders = null);
     }
 }

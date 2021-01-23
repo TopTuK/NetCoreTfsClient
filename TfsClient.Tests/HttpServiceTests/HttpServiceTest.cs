@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using TfsClient.HttpService;
@@ -126,6 +127,54 @@ namespace TfsClient.Tests.HttpServiceTests
             Assert.True(jsonResponse.ContainsKey("form"));
             Assert.Equal(1, jsonResponse["form"]["id"].Value<int>());
             Assert.Equal("my_value", jsonResponse["form"]["my_param"].Value<string>());
+        }
+
+        [Fact(DisplayName = "POST JSON Returns json response with args")]
+        public void HttpServiceSimplePostJsonSuccess()
+        {
+            // Arrange
+            var json = new List<object>()
+            {
+                new { A = "AA", B = "BB"},
+                new { C = true, D = 1 }
+            };
+
+            // Act
+            var response = _httpService.PostJson(_postUrl, json);
+
+            // Assert
+            Assert.NotNull(response);
+            Assert.True(response.IsSuccess);
+            Assert.False(response.HasError);
+            Assert.NotNull(response.Content);
+
+            var jsonResponse = JObject.Parse(response.Content);
+            Assert.True(jsonResponse.ContainsKey("json"));
+            Assert.Equal(2, jsonResponse["json"].Count());
+        }
+
+        [Fact(DisplayName = "POST JSON async Returns json response with args")]
+        public async Task HttpServiceSimplePostJsonAsyncSuccess()
+        {
+            // Arrange
+            var json = new List<object>()
+            {
+                new { A = "AA", B = "BB"},
+                new { C = true, D = 1 }
+            };
+
+            // Act
+            var response = await _httpService.PostJsonAsync(_postUrl, json);
+
+            // Assert
+            Assert.NotNull(response);
+            Assert.True(response.IsSuccess);
+            Assert.False(response.HasError);
+            Assert.NotNull(response.Content);
+
+            var jsonResponse = JObject.Parse(response.Content);
+            Assert.True(jsonResponse.ContainsKey("json"));
+            Assert.Equal(2, jsonResponse["json"].Count());
         }
 
         [Fact(DisplayName = "PATCH Returns simple success response")]
