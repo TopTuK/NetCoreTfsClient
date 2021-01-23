@@ -1,0 +1,134 @@
+{
+	"id":100500,
+	"rev":1,
+	"fields": {
+		"System.Id":100500,
+		"System.AreaId":4305,
+		"System.AreaPath":"PROJECT\\AREA\\PATH\\NODENAME",
+		"System.TeamProject":"PROJECT",
+		"System.NodeName":"NODENAME",
+		"System.AreaLevel1":"PROJECT",
+		"System.AreaLevel2":"AREA",
+		"System.AreaLevel3":"PATH",
+		"System.AreaLevel4":"NODENAME",
+		"System.Rev":1,
+		"System.AuthorizedDate":"2020-06-10T17:56:45.403Z",
+		"System.RevisedDate":"9999-01-01T00:00:00Z",
+		"System.IterationId":108888,
+		"System.IterationPath":"PROJECT\\ITERATION",
+		"System.IterationLevel1":"PROJECT",
+		"System.IterationLevel2":"ITERATION",
+		"System.WorkItemType":"Task",
+		"System.State":"Proposed",
+		"System.Reason":"New",
+		"System.AssignedTo": {
+			"displayName":"TopTuK",
+			"url":"https://tfs-url/tfs/blah",
+			"_links": {
+				"avatar":{
+					"href":"https://tfs-url/tfs/blah"
+				}
+			},
+			"id":"GUID",
+			"uniqueName":"Test\\TopTuK",
+			"imageUrl":"https://tfs-url/tfs/imageUrl",
+			"descriptor":"win.sdgsdfgsdfg"
+		},
+		"System.CreatedDate":"2020-06-10T17:56:45.403Z",
+		"System.CreatedBy": {
+			"displayName":"TopTuK",
+			"url":"https://tfs-url/tfs/blah",
+			"_links": {
+				"avatar":{
+					"href":"https://tfs-url/tfs/blah"
+				}
+			},
+			"id":"GUID",
+			"uniqueName":"Test\\TopTuK",
+			"imageUrl":"https://tfs-url/tfs/imageUrl",
+			"descriptor":"win.sdgsdfgsdfg"
+		},
+		"System.ChangedDate":"2020-06-10T17:56:45.403Z",
+		"System.ChangedBy": {
+			"displayName":"TopTuK",
+			"url":"https://tfs-url/tfs/blah",
+			"_links": {
+				"avatar":{
+					"href":"https://tfs-url/tfs/blah"
+				}
+			},
+			"id":"GUID",
+			"uniqueName":"Test\\TopTuK",
+			"imageUrl":"https://tfs-url/tfs/imageUrl",
+			"descriptor":"win.sdgsdfgsdfg"
+		},
+		"System.AuthorizedAs": {
+			"displayName":"TopTuK",
+			"url":"https://tfs-url/tfs/blah",
+			"_links": {
+				"avatar":{
+					"href":"https://tfs-url/tfs/blah"
+				}
+			},
+			"id":"GUID",
+			"uniqueName":"Test\\TopTuK",
+			"imageUrl":"https://tfs-url/tfs/imageUrl",
+			"descriptor":"win.sdgsdfgsdfg"
+		},
+		"System.PersonId":47104,
+		"System.Watermark":77777777,
+		"System.CommentCount":0,
+		"System.Title":"[Task] Task title name",
+		"Microsoft.VSTS.Common.StateChangeDate":"2020-06-10T17:56:45.403Z",
+		"Microsoft.VSTS.Common.Priority":2,
+		"Microsoft.VSTS.Common.Triage":"Pending",
+		"Microsoft.VSTS.CMMI.Blocked":"No",
+		"Microsoft.VSTS.CMMI.TaskType":"Planned",
+		"Microsoft.VSTS.CMMI.RequiresReview":"No",
+		"Microsoft.VSTS.CMMI.RequiresTest":"No",
+		"System.Description":"Task description",
+		"System.Parent":100502
+	},
+	"relations": [
+		{
+			"rel":"Microsoft.VSTS.Common.Affects-Reverse",
+			"url":"https://dit-tfs/tfs/DefaultCollection/guid_guid_guid/_apis/wit/workItems/100501",
+			"attributes": {
+				"isLocked":false,
+				"name":"Affected By"
+			}
+		},
+		{
+			"rel":"System.LinkTypes.Hierarchy-Reverse",
+			"url":"https://dit-tfs/tfs/DefaultCollection/guid_guid_guid/_apis/wit/workItems/100502",
+			"attributes": {
+				"isLocked":false,
+				"name":"Parent"
+			}
+		}
+	],
+	"_links": {
+		"self": {
+			"href":"https://dit-tfs/tfs/DefaultCollection/guid_guid_guid/_apis/wit/workItems/100500"
+		},
+		"workItemUpdates": {
+			"href":"https://dit-tfs/tfs/DefaultCollection/guid_guid_guid/_apis/wit/workItems/100500/updates"
+		},
+		"workItemRevisions": {
+			"href":"https://dit-tfs/tfs/DefaultCollection/guid_guid_guid/_apis/wit/workItems/100500/revisions"
+		},
+		"workItemComments": {
+			"href":"https://dit-tfs/tfs/DefaultCollection/guid_guid_guid/_apis/wit/workItems/100500/comments"
+		},
+		"html": {
+			"href":"https://dit-tfs/tfs/DefaultCollection/guid_guid_guid/_workitems/edit/100500"
+		},
+		"workItemType": {
+			"href":"https://dit-tfs/tfs/DefaultCollection/guid_guid_guid/_apis/wit/workItemTypes/Task"
+		},
+		"fields": {
+			"href":"https://dit-tfs/tfs/DefaultCollection/guid_guid_guid/_apis/wit/fields"
+		}
+	},
+	"url":"https://dit-tfs/tfs/DefaultCollection/guid_guid_guid/_apis/wit/workItems/100500"
+}
