@@ -13,117 +13,52 @@ namespace TfsClient.Tests.TfsClientTests.HttpServiceMock
             ""count"": 1,
             ""value"": [
             {
-                ""id"": 100500,
+                ""id"": {0},
                 ""rev"": 1,
                 ""fields"": {
-                    ""System.Id"": 100500,
+                    ""System.Id"": {0},
                     ""System.WorkItemType"": ""Requirement"",
                     ""System.Title"": ""Tfs test workitem - Requirement"",
-                    ""System.Description"": ""Description of test workitem""
+                    ""System.Description"": ""Description of test workitem"",
+                    ""System.AssignedTo"": {
+			            ""displayName"": ""TopTuK"",
+			            ""url"": ""https://tfs-url/tfs/blah"",
+			            ""_links"": {
+				            ""avatar"": {
+					            ""href"": ""https://tfs-url/tfs/blah""
+				            }
+			            },
+			            ""id"": ""GUID"",
+			            ""uniqueName"": ""Test\\TopTuK"",
+			            ""imageUrl"": ""https://tfs-url/tfs/imageUrl"",
+			            ""descriptor"": ""win.sdgsdfgsdfg""
+		            },
                 },
-                ""url"": ""https://tfs-tfs/tfs/_apis/wit/workItems/100500""
+                ""url"": ""https://tfs-tfs/tfs/_apis/wit/workItems/{0}""
             }]
         }";
 
-        private static readonly string _multipyItemsResponseContent = @"
+        private static IHttpResponse CreateSingleItemHttpResponse(int workitemId)
         {
-            ""count"": 2,
-            ""value"": [
-            {
-                ""id"": 100501,
-                ""rev"": 1,
-                ""fields"": {
-                    ""System.Id"": 100501,
-                    ""System.WorkItemType"": ""Requirement"",
-                    ""System.Title"": ""Tfs test workitem - Requirement"",
-                    ""System.Description"": ""Description of test workitem""
-                },
-                ""url"": ""https://tfs-tfs/tfs/_apis/wit/workItems/100500""
-            },
-            {
-                ""id"": 100502,
-                ""rev"": 1,
-                ""fields"": {
-                    ""System.Id"": 100502,
-                    ""System.WorkItemType"": ""Requirement"",
-                    ""System.Title"": ""Tfs test workitem - Requirement"",
-                    ""System.Description"": ""Description of test workitem""
-                },
-                ""url"": ""https://tfs-tfs/tfs/_apis/wit/workItems/100500""
-            }
-            ]
-        }";
+            var singleItemResponse = _singleItemResponseContent.Replace("{0}", workitemId.ToString());
 
-        private static readonly string _manyItemsResponseContent = @"";
-
-        private static readonly string _itemNotFoundResponseContent = @"";
-
-        private static readonly IHttpResponse _singleItemResponse = Mock.Of<IHttpResponse>(resp =>
-            resp.HasError == false &&
-            resp.Headers == null &&
-            resp.IsEmptyCookies == true &&
-            resp.IsSuccess == true &&
-            resp.RequestUrl == null &&
-            resp.StatusCode == 200 &&
-            resp.Cookies == null &&
-            resp.ContentType == "" &&
-            resp.Content == _singleItemResponseContent
-        );
-
-        private static readonly IHttpResponse _multipyItemsResponse = Mock.Of<IHttpResponse>(resp =>
-            resp.HasError == false &&
-            resp.Headers == null &&
-            resp.IsEmptyCookies == true &&
-            resp.IsSuccess == true &&
-            resp.RequestUrl == null &&
-            resp.StatusCode == 200 &&
-            resp.Cookies == null &&
-            resp.ContentType == "" &&
-            resp.Content == _multipyItemsResponseContent
-        );
-
-        private static readonly IHttpResponse _manyItemsResponse = Mock.Of<IHttpResponse>(resp =>
-            resp.HasError == false &&
-            resp.Headers == null &&
-            resp.IsEmptyCookies == true &&
-            resp.IsSuccess == true &&
-            resp.RequestUrl == null &&
-            resp.StatusCode == 200 &&
-            resp.Cookies == null &&
-            resp.ContentType == "" &&
-            resp.Content == _manyItemsResponseContent
-        );
-
-        private static readonly IHttpResponse _itemNotFoundResponse = Mock.Of<IHttpResponse>(resp =>
-            resp.HasError == false &&
-            resp.Headers == null &&
-            resp.IsEmptyCookies == true &&
-            resp.IsSuccess == true &&
-            resp.RequestUrl == null &&
-            resp.StatusCode == 200 &&
-            resp.Cookies == null &&
-            resp.ContentType == "" &&
-            resp.Content == _itemNotFoundResponseContent
-        );
-
-        public static Mock<IHttpService> CreateSingleItemHttpServiceMock()
-        {
-            var httpServiceMock = new Mock<IHttpService>();
-
-            httpServiceMock
-                .Setup(mock => mock.Get(
-                    It.IsAny<string>(),
-                    It.IsAny<IReadOnlyDictionary<string, string>>(),
-                    It.IsAny<IReadOnlyDictionary<string, string>>()
-                 ))
-                .Returns(_singleItemResponse);
-
-            return httpServiceMock;
+            return Mock.Of<IHttpResponse>(resp =>
+                resp.HasError == false &&
+                resp.Headers == null &&
+                resp.IsEmptyCookies == true &&
+                resp.IsSuccess == true &&
+                resp.RequestUrl == null &&
+                resp.StatusCode == 200 &&
+                resp.Cookies == null &&
+                resp.ContentType == "" &&
+                resp.Content == singleItemResponse
+            );
         }
 
-        public static Mock<IHttpService> CreateMultipyItemHttpServiceMock()
+        public static Mock<IHttpService> CreateSingleItemHttpServiceMock(int workitemId)
         {
             var httpServiceMock = new Mock<IHttpService>();
+            var response = CreateSingleItemHttpResponse(workitemId);
 
             httpServiceMock
                 .Setup(mock => mock.Get(
@@ -131,7 +66,7 @@ namespace TfsClient.Tests.TfsClientTests.HttpServiceMock
                     It.IsAny<IReadOnlyDictionary<string, string>>(),
                     It.IsAny<IReadOnlyDictionary<string, string>>()
                  ))
-                .Returns(_multipyItemsResponse);
+                .Returns(response);
 
             return httpServiceMock;
         }

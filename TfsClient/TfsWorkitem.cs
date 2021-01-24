@@ -69,7 +69,9 @@ namespace TfsClient
                 {
                     if (_fields.TryGetValue(fieldName, out JToken jField))
                     {
-                        return jField.ToObject<string>();
+                        return jField.Type == JTokenType.String
+                            ? jField.ToObject<string>()
+                            : jField.ToString();
                     }
 
                     return null;
