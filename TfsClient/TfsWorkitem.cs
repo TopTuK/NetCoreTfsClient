@@ -63,6 +63,8 @@ namespace TfsClient
             public int Id { get; }
             public IReadOnlyCollection<ITfsWorkitemRelation> Relations => _relations;
 
+            public IReadOnlyCollection<string> FieldNames => _fields.Keys;
+
             public string this[string fieldName] 
             {
                 get
@@ -133,6 +135,16 @@ namespace TfsClient
                     }
                 }
             }
+
+            public void UpdateFields()
+            {
+                var fields = _fields.ToDictionary(
+                    fld => fld.Key, 
+                    fld => this[fld.Key]
+                );
+
+                var item = _tfsServiceClient.UpdateWorkitemFields(Id, fields);
+            }
         }
 
         public static IEnumerable<ITfsWorkitem> FromJson(ITfsServiceClient tfsService, string jsonItemsStr)
@@ -152,6 +164,11 @@ namespace TfsClient
             }
 
             return items;
+        }
+
+        public static ITfsWorkitem FromJsonItem(ITfsServiceClient tfsService, string jsonItemStr)
+        {
+            throw new NotImplementedException();
         }
     }
 }

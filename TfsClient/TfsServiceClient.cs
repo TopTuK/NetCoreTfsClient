@@ -38,7 +38,7 @@ namespace TfsClient
 
     internal class TfsServiceClient : ITfsServiceClient
     {
-        private const string GET_WORKITEM_URL = @"wit/workitems";
+        private const string WORKITEM_URL = @"wit/workitems";
 
         private readonly IHttpService _httpService;
         private readonly string _tfsUrl;
@@ -93,13 +93,13 @@ namespace TfsClient
             _httpService.Authentificate(userName, userPassword);
         }
 
-        private IEnumerable<ITfsWorkitem> GetTfsItems(string requstUrl,
+        private IEnumerable<ITfsWorkitem> GetTfsItems(string requestUrl,
             IReadOnlyDictionary<string, string> requestParams = null,
             bool underProject = false)
         {
             var url = underProject
-                ? (_tfsUrlPrj + requstUrl)
-                : (_tfsUrl + requstUrl);
+                ? (_tfsUrlPrj + requestUrl)
+                : (_tfsUrl + requestUrl);
 
             var response = _httpService.Get(url, requestParams);
 
@@ -113,12 +113,12 @@ namespace TfsClient
             return null;
         }
 
-        public ITfsWorkitem GetSingleWorkitem(int id, IEnumerable<string> fields = null)
+        public ITfsWorkitem GetSingleWorkitem(int id, IEnumerable<string> fields = null, string expand = "All")
         {
             // We should always request multlipy items for correct parsing purposes
             var requestParams = new Dictionary<string, string>
             {
-                { "$expand", "all" },
+                { "$expand", $"{expand}" },
                 { "api-version", "6.0" },
                 { "ids", $"{id}" }
             };
@@ -132,7 +132,7 @@ namespace TfsClient
             IEnumerable<ITfsWorkitem> items = null;
             try
             {
-                items = GetTfsItems(GET_WORKITEM_URL, requestParams);
+                items = GetTfsItems(WORKITEM_URL, requestParams);
             }
             catch(Exception ex)
             {
@@ -143,11 +143,11 @@ namespace TfsClient
         }
 
         public IEnumerable<ITfsWorkitem> GetWorkitems(IEnumerable<int> ids,
-            IEnumerable<string> fields = null, int batchSize = 50)
+            IEnumerable<string> fields = null, string expand = "All", int batchSize = 50)
         {
             var defaultRequestParams = new Dictionary<string, string>
             {
-                { "$expand", "all" },
+                { "$expand", $"{expand}" },
                 { "api-version", "6.0" }
             };
 
@@ -167,7 +167,7 @@ namespace TfsClient
 
                 try
                 {
-                    var tfsItems = GetTfsItems(GET_WORKITEM_URL, requestParams);
+                    var tfsItems = GetTfsItems(WORKITEM_URL, requestParams);
                     resultItems.AddRange(tfsItems);
                 }
                 catch(Exception ex)
@@ -177,6 +177,45 @@ namespace TfsClient
             }
 
             return resultItems;
+        }
+
+        // https://docs.microsoft.com/en-us/rest/api/azure/devops/wit/work%20items/update?view=azure-devops-rest-6.0
+        public ITfsWorkitem UpdateWorkitemFields(int workitemId, IDictionary<string, string> itemFields,
+            string expand = "All", bool bypassRules = false, 
+            bool supressNotifications = true, bool validateOnly = false)
+        {
+            if (itemFields == null)
+            {
+                throw new ArgumentNullException("itemFields");
+            }
+
+            var requestBody = itemFields
+                .Select(fld => new { 
+                    op = "add",
+                    path = $"/fields/{fld.Key}",
+                    value = fld.Value
+                })
+                .ToList();
+
+            var requestUrl = $"{_tfsUrlPrj}/{WORKITEM_URL}/{workitemId}?api-version=6.0"
+                + $"&$expand={expand}&suppressNotifications={supressNotifications}&validateOnly={validateOnly}";
+
+            try
+            {
+                var response = _httpService.PatchJson(requestUrl, requestBody);
+                if (response.IsSuccess)
+                {
+                    return TfsWorkitemFactory.FromJsonItem(this, response.Content);
+                }
+                else
+                {
+                    return null;
+                }
+            }
+            catch(Exception ex)
+            {
+                throw ex;
+            }
         }
     }
 }

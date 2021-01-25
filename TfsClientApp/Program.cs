@@ -22,9 +22,35 @@ namespace TfsClientApp
             var tfsService = TfsServiceClientFactory.CreateTfsServiceClient(tfsServerUrl, tfsCollection,
                 userName, userPassword);
 
-            var item = tfsService.GetSingleWorkitem(100500);
+            Console.Write("Enter Workitem id: ");
+            if(int.TryParse(Console.ReadLine(), out int workId))
+            {
+                var item = tfsService.GetSingleWorkitem(workId);
+                if(item != null)
+                {
+                    DisplayTfsItemDetails(item);
+                }
+                else
+                {
+                    Console.WriteLine($"Item {workId} is not found!");
+                }
+            }
+            else
+            {
+                Console.WriteLine("Invalid workitem id");
+            }
 
             Console.WriteLine("Meow!");
+        }
+
+        private static void DisplayTfsItemDetails(ITfsWorkitem workitem)
+        {
+            Console.WriteLine($"Found item: {workitem.Id}");
+            Console.WriteLine($"Workitem type: {workitem.ItemType} - {workitem.ItemTypeName}");
+            Console.WriteLine($"Workitem url: {workitem.Url}");
+            Console.WriteLine($"Workitem fields: {string.Join(',', workitem.FieldNames)}");
+
+            Console.WriteLine($"Workitem title: {workitem["System.Title"]}");
         }
     }
 }
