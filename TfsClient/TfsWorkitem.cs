@@ -136,39 +136,69 @@ namespace TfsClient
                 }
             }
 
-            public void UpdateFields()
+            public UpdateFieldsResult UpdateFields()
             {
-                var fields = _fields.ToDictionary(
-                    fld => fld.Key, 
-                    fld => this[fld.Key]
-                );
+                var fields = _fields
+                    .Select(fld => fld)
+                    .ToDictionary(fld => fld.Key, fld => this[fld.Key]);
 
-                var item = _tfsServiceClient.UpdateWorkitemFields(Id, fields);
-            }
-        }
-
-        public static IEnumerable<ITfsWorkitem> FromJson(ITfsServiceClient tfsService, string jsonItemsStr)
-        {
-            List<ITfsWorkitem> items = null;
-
-            var jsonResult = JObject.Parse(jsonItemsStr);
-            if(jsonResult.ContainsKey("value"))
-            {
-                var jsonItems = jsonResult["value"].ToObject<JArray>();
-                items = new List<ITfsWorkitem>(jsonItems.Count);
-
-                foreach(var jsonItem in jsonItems)
+                try
                 {
-                    items.Add(new TfsWorkitem(tfsService, jsonItem));
+                    var item = _tfsServiceClient.UpdateWorkitemFields(Id, fields, expand: "fields") as TfsWorkitem;
+                    if (item == null) return UpdateFieldsResult.UPDATE_FAIL;
+
+                    _fields = item._fields;
+
+                    return UpdateFieldsResult.UPDATE_SUCCESS;
+                }
+                catch
+                {
+                    return UpdateFieldsResult.UPDATE_FAIL;
                 }
             }
-
-            return items;
         }
 
         public static ITfsWorkitem FromJsonItem(ITfsServiceClient tfsService, string jsonItemStr)
         {
-            throw new NotImplementedException();
+            ITfsWorkitem item = null;
+
+            try
+            {
+                var jsonItem = JObject.Parse(jsonItemStr);
+                item = new TfsWorkitem(tfsService, jsonItem);
+            }
+            catch(Exception ex)
+            {
+                throw ex;
+            }
+
+            return item;
+        }
+
+        public static IEnumerable<ITfsWorkitem> FromJsonItems(ITfsServiceClient tfsService, string jsonItemsStr)
+        {
+            List<ITfsWorkitem> items = null;
+
+            try
+            {
+                var jsonResult = JObject.Parse(jsonItemsStr);
+                if (jsonResult.ContainsKey("value"))
+                {
+                    var jsonItems = jsonResult["value"].ToObject<JArray>();
+                    items = new List<ITfsWorkitem>(jsonItems.Count);
+
+                    foreach (var jsonItem in jsonItems)
+                    {
+                        items.Add(new TfsWorkitem(tfsService, jsonItem));
+                    }
+                }
+            }
+            catch(Exception ex)
+            {
+                throw ex;
+            }
+
+            return items;
         }
     }
 }

@@ -181,9 +181,14 @@ namespace TfsClient.Tests.HttpServiceTests
         public void HttpServiceSimplePatchSuccess()
         {
             // Arrange
+            var queryParams = new Dictionary<string, string>()
+            {
+                { "key", "value" },
+                { "param", "1" }
+            };
 
             // Act
-            var response = _httpService.Patch(_patchUrl);
+            var response = _httpService.Patch(_patchUrl, customParams: queryParams);
 
             // Assert
             Assert.NotNull(response);

@@ -38,6 +38,7 @@ namespace TfsClient
 
     internal class TfsServiceClient : ITfsServiceClient
     {
+        private const string API_VERSION = "6.0";
         private const string WORKITEM_URL = @"wit/workitems";
 
         private readonly IHttpService _httpService;
@@ -105,7 +106,7 @@ namespace TfsClient
 
             if((response != null) && (response.IsSuccess))
             {
-                var items = TfsWorkitemFactory.FromJson(this, response.Content);
+                var items = TfsWorkitemFactory.FromJsonItems(this, response.Content);
                 
                 return items;
             }
@@ -115,29 +116,11 @@ namespace TfsClient
 
         public ITfsWorkitem GetSingleWorkitem(int id, IEnumerable<string> fields = null, string expand = "All")
         {
-            // We should always request multlipy items for correct parsing purposes
-            var requestParams = new Dictionary<string, string>
+            int[] ids = new int[]
             {
-                { "$expand", $"{expand}" },
-                { "api-version", "6.0" },
-                { "ids", $"{id}" }
+                id
             };
-
-            if(fields != null)
-            {
-                var flds = string.Join(",", fields);
-                requestParams.Add("fields", flds);
-            }
-
-            IEnumerable<ITfsWorkitem> items = null;
-            try
-            {
-                items = GetTfsItems(WORKITEM_URL, requestParams);
-            }
-            catch(Exception ex)
-            {
-                throw ex;
-            }
+            var items = GetWorkitems(ids, fields, expand);
 
             return items?.FirstOrDefault();
         }
@@ -148,7 +131,7 @@ namespace TfsClient
             var defaultRequestParams = new Dictionary<string, string>
             {
                 { "$expand", $"{expand}" },
-                { "api-version", "6.0" }
+                { "api-version", API_VERSION }
             };
 
             if (fields != null)
@@ -197,20 +180,23 @@ namespace TfsClient
                 })
                 .ToList();
 
-            var requestUrl = $"{_tfsUrlPrj}/{WORKITEM_URL}/{workitemId}?api-version=6.0"
-                + $"&$expand={expand}&suppressNotifications={supressNotifications}&validateOnly={validateOnly}";
+            var requestUrl = $"{_tfsUrlPrj}/{WORKITEM_URL}/{workitemId}";
+
+            var queryParams = new Dictionary<string, string>()
+            {
+                { "api-version", API_VERSION },
+                { "$expand", expand },
+                { "suppressNotifications", $"{supressNotifications}" },
+                { "validateOnly", $"{validateOnly}" }
+            };
 
             try
             {
-                var response = _httpService.PatchJson(requestUrl, requestBody);
-                if (response.IsSuccess)
-                {
-                    return TfsWorkitemFactory.FromJsonItem(this, response.Content);
-                }
-                else
-                {
-                    return null;
-                }
+                var response = _httpService.PatchJson(requestUrl, requestBody, customParams: queryParams);
+
+                return response.IsSuccess
+                    ? TfsWorkitemFactory.FromJsonItem(this, response.Content)
+                    : null;
             }
             catch(Exception ex)
             {

@@ -177,9 +177,19 @@ namespace TfsClient.HttpService
 
         public IHttpResponse PatchJson(string resource,
             object requestBody,
+            IReadOnlyDictionary<string, string> customParams = null,
             IReadOnlyDictionary<string, string> customHeaders = null)
         {
             var request = MakeRequest(resource, customHeaders: customHeaders);
+
+            if (customParams != null)
+            {
+                foreach (var queryParam in customParams)
+                {
+                    request.AddQueryParameter(queryParam.Key, queryParam.Value);
+                }
+            }
+
             request.AddJsonBody(requestBody);
             var response = _restClient.Patch(request);
 
@@ -188,9 +198,19 @@ namespace TfsClient.HttpService
 
         public async Task<IHttpResponse> PatchJsonAsync(string resource,
             object requestBody,
+            IReadOnlyDictionary<string, string> customParams = null,
             IReadOnlyDictionary<string, string> customHeaders = null)
         {
             var request = MakeRequest(resource, customHeaders: customHeaders);
+
+            if (customParams != null)
+            {
+                foreach(var queryParam in customParams)
+                {
+                    request.AddQueryParameter(queryParam.Key, queryParam.Value);
+                }
+            }
+
             request.AddJsonBody(requestBody);
             request.Method = Method.PATCH;
 
