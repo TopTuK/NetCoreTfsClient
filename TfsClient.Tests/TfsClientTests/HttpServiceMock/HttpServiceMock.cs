@@ -126,5 +126,42 @@ namespace TfsClient.Tests.TfsClientTests.HttpServiceMock
 
             return httpServiceMock;
         }
+
+        public static Mock<IHttpService> CreateUpdateItemFieldsServiceMock(
+            int workItemId,
+            IReadOnlyDictionary<string, string> itemFields)
+        {
+            StringBuilder itemResponse = new StringBuilder(_itemContentTemplate);
+            itemResponse.Replace("{_ID_}", workItemId.ToString());
+            itemResponse.Replace("{_TYPE_}", "Task");
+
+            if (itemFields.ContainsKey("System.Title"))
+            {
+                itemResponse.Replace("{_TITLE_}", itemFields["System.Title"]);
+            }
+            else throw new ArgumentException("Dictonary must contain System.Title key", "itemFields");
+
+            var httpServiceMock = new Mock<IHttpService>();
+            httpServiceMock.Setup(mock => mock.PatchJson(
+                    It.IsAny<string>(),
+                    It.IsAny<object>(),
+                    It.IsAny<IReadOnlyDictionary<string, string>>(),
+                    It.IsAny<IReadOnlyDictionary<string, string>>()
+                ))
+                .Returns(Mock.Of<IHttpResponse>(resp =>
+                    resp.HasError == false &&
+                    resp.Headers == null &&
+                    resp.IsEmptyCookies == true &&
+                    resp.IsSuccess == true &&
+                    resp.RequestUrl == null &&
+                    resp.StatusCode == 200 &&
+                    resp.Cookies == null &&
+                    resp.ContentType == "" &&
+                    resp.Content == itemResponse.ToString()
+                )
+            );
+
+            return httpServiceMock;
+        }
     }
 }

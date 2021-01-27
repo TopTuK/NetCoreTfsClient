@@ -8,12 +8,21 @@ namespace TfsClient
 {
     internal static class TfsWorkitemFactory
     {
-        private static readonly Dictionary<string, WorkItemType> WorkItemTypeMap = new Dictionary<string, WorkItemType>()
+        private static readonly IReadOnlyDictionary<string, WorkItemType> WorkItemTypeMap = new Dictionary<string, WorkItemType>()
         {
             { "Requirement", WorkItemType.Requirement },
             { "Change request", WorkItemType.ChangeRequest },
             { "Task", WorkItemType.Task },
             { "Bug", WorkItemType.Bug }
+        };
+
+        public static readonly IReadOnlyDictionary<WorkitemRelationType, string> RELATION_TYPE_MAP = new Dictionary<WorkitemRelationType, string>()
+        {
+            { WorkitemRelationType.AffectedBy, "Microsoft.VSTS.Common.Affects-Reverse" },
+            { WorkitemRelationType.Affects, "Microsoft.VSTS.Common.Affects-Forward" },
+            { WorkitemRelationType.Child, "System.LinkTypes.Hierarchy-Forward" },
+            { WorkitemRelationType.Parent, "System.LinkTypes.Hierarchy-Reverse" },
+            { WorkitemRelationType.Related, "System.LinkTypes.Related" },
         };
 
         private class TfsWorkitemRelation : ITfsWorkitemRelation

@@ -94,6 +94,8 @@ namespace TfsClient
             _httpService.Authentificate(userName, userPassword);
         }
 
+        private string GetWorkitemUrl(int workitemId) => $"{ServerUrl}/{_tfsUrl}/{WORKITEM_URL}/{workitemId}";
+
         private IEnumerable<ITfsWorkitem> GetTfsItems(string requestUrl,
             IReadOnlyDictionary<string, string> requestParams = null,
             bool underProject = false)
@@ -163,7 +165,7 @@ namespace TfsClient
         }
 
         // https://docs.microsoft.com/en-us/rest/api/azure/devops/wit/work%20items/update?view=azure-devops-rest-6.0
-        public ITfsWorkitem UpdateWorkitemFields(int workitemId, IDictionary<string, string> itemFields,
+        public ITfsWorkitem UpdateWorkitemFields(int workitemId, IReadOnlyDictionary<string, string> itemFields,
             string expand = "All", bool bypassRules = false, 
             bool supressNotifications = true, bool validateOnly = false)
         {
@@ -186,6 +188,7 @@ namespace TfsClient
             {
                 { "api-version", API_VERSION },
                 { "$expand", expand },
+                { "bypassRules", $"{bypassRules}" },
                 { "suppressNotifications", $"{supressNotifications}" },
                 { "validateOnly", $"{validateOnly}" }
             };
@@ -202,6 +205,67 @@ namespace TfsClient
             {
                 throw ex;
             }
+        }
+
+        // https://docs.microsoft.com/en-us/rest/api/azure/devops/wit/work%20items/update?view=azure-devops-rest-6.0#add-a-link
+        public ITfsWorkitem AddRelationLink(
+            int sourceWorkitemId, int destinationWorkitemId, 
+            string relationType, IReadOnlyDictionary<string, string> relationAttributes = null,
+            string expand = "All", bool bypassRules = false,
+            bool supressNotifications = true, bool validateOnly = false)
+        {
+            if((relationType == null) || (relationType.Trim() == ""))
+            {
+                throw new ArgumentNullException("relationType", "parametr is null or empty");
+            }
+
+            var requestUrl = $"{_tfsUrlPrj}/{WORKITEM_URL}/{sourceWorkitemId}";
+
+            var queryParams = new Dictionary<string, string>()
+            {
+                { "api-version", API_VERSION },
+                { "$expand", expand },
+                { "bypassRules", $"{bypassRules}" },
+                { "suppressNotifications", $"{supressNotifications}" },
+                { "validateOnly", $"{validateOnly}" }
+            };
+
+            var requestBody = new
+            {
+                op = "add",
+                path = @"/relations/-",
+                value = new
+                {
+                    rel = relationType,
+                    url = GetWorkitemUrl(destinationWorkitemId),
+                    attributes = relationAttributes
+                }
+            };
+
+            try
+            {
+                var response = _httpService.PatchJson(requestUrl, requestBody, customParams: queryParams);
+
+                return response.IsSuccess
+                    ? TfsWorkitemFactory.FromJsonItem(this, response.Content)
+                    : null;
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+
+        public ITfsWorkitem AddRelationLink(
+            int sourceWorkitemId, int destinationWorkitemId,
+            WorkitemRelationType relationType, IReadOnlyDictionary<string, string> relationAttributes = null)
+        {
+            if(!TfsWorkitemFactory.RELATION_TYPE_MAP.TryGetValue(relationType, out string relTypeName))
+            {
+                throw new ArgumentException("relationType must not be unknowed", "relationType");
+            }
+
+            return AddRelationLink(sourceWorkitemId, destinationWorkitemId, relTypeName, relationAttributes);
         }
     }
 }
