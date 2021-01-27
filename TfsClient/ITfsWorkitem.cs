@@ -30,11 +30,18 @@ namespace TfsClient
         UPDATE_SUCCESS
     }
 
+    public enum UpdateRelationsResult: byte
+    {
+        UPDATE_FAIL = 0,
+        UPDATE_SUCCESS
+    }
+
     public interface ITfsWorkitemRelation
     {
         WorkitemRelationType RelationType { get; }
         string RelationTypeName { get; }
         string Url { get; }
+        int WorkitemId { get; }
     }
 
     public interface ITfsWorkitem
@@ -48,6 +55,8 @@ namespace TfsClient
         string this[string fieldName] { get; set; }
         UpdateFieldsResult UpdateFields();
 
-        IReadOnlyCollection<ITfsWorkitemRelation> Relations { get; }
+        IReadOnlyList<ITfsWorkitemRelation> Relations { get; }
+        UpdateRelationsResult AddRelationLink(int destinationWorkitemId, WorkitemRelationType relationType,
+            IReadOnlyDictionary<string, string> relationAttributes = null);
     }
 }

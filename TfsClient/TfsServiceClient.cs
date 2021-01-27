@@ -262,7 +262,7 @@ namespace TfsClient
         {
             if(!TfsWorkitemFactory.RELATION_TYPE_MAP.TryGetValue(relationType, out string relTypeName))
             {
-                throw new ArgumentException("relationType must not be unknowed", "relationType");
+                throw new ArgumentException("relationType must not be unknown", "relationType");
             }
 
             return AddRelationLink(sourceWorkitemId, destinationWorkitemId, relTypeName, relationAttributes);

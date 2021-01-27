@@ -27,9 +27,13 @@ namespace TfsClient
 
         private class TfsWorkitemRelation : ITfsWorkitemRelation
         {
+            private static readonly string WORKITEM_SUBSTR = "workItems/";
+            private static readonly int WORKITEM_SUBSTR_LENGTH = WORKITEM_SUBSTR.Length;
+
             public WorkitemRelationType RelationType { get; }
             public string RelationTypeName { get; }
             public string Url { get; }
+            public int WorkitemId { get; }
 
             public TfsWorkitemRelation(JToken jsonRelation)
             {
@@ -57,6 +61,18 @@ namespace TfsClient
                         RelationType = WorkitemRelationType.Unknown;
                         break;
                 }
+
+                WorkitemId = -1;
+
+                var idStartIdx = Url.IndexOf(WORKITEM_SUBSTR);
+                if(idStartIdx > 1)
+                {
+                    int id;
+                    if(int.TryParse(Url.Substring(idStartIdx + WORKITEM_SUBSTR_LENGTH), out id))
+                    {
+                        WorkitemId = id;
+                    }
+                }
             }
         }
 
@@ -70,7 +86,7 @@ namespace TfsClient
             public string ItemTypeName { get; }
             public string Url { get; }
             public int Id { get; }
-            public IReadOnlyCollection<ITfsWorkitemRelation> Relations => _relations;
+            public IReadOnlyList<ITfsWorkitemRelation> Relations => _relations;
 
             public IReadOnlyCollection<string> FieldNames => _fields.Keys;
 
@@ -164,6 +180,27 @@ namespace TfsClient
                 {
                     return UpdateFieldsResult.UPDATE_FAIL;
                 }
+            }
+
+            public UpdateRelationsResult AddRelationLink(
+                int destinationWorkitemId, WorkitemRelationType relationType,
+                IReadOnlyDictionary<string, string> relationAttributes = null)
+            {
+                try
+                {
+                    var item = _tfsServiceClient.AddRelationLink(Id, destinationWorkitemId, 
+                        relationType, relationAttributes) as TfsWorkitem;
+                    if (item == null) return UpdateRelationsResult.UPDATE_FAIL;
+
+                    _relations = item._relations;
+
+                    return UpdateRelationsResult.UPDATE_SUCCESS;
+                }
+                catch
+                {
+                    return UpdateRelationsResult.UPDATE_FAIL;
+                }
+                throw new NotImplementedException();
             }
         }
 
