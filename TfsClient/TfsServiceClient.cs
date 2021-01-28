@@ -167,7 +167,7 @@ namespace TfsClient
         // https://docs.microsoft.com/en-us/rest/api/azure/devops/wit/work%20items/update?view=azure-devops-rest-6.0
         public ITfsWorkitem UpdateWorkitemFields(int workitemId, IReadOnlyDictionary<string, string> itemFields,
             string expand = "All", bool bypassRules = false, 
-            bool supressNotifications = true, bool validateOnly = false)
+            bool suppressNotifications = false, bool validateOnly = false)
         {
             if (itemFields == null)
             {
@@ -189,7 +189,7 @@ namespace TfsClient
                 { "api-version", API_VERSION },
                 { "$expand", expand },
                 { "bypassRules", $"{bypassRules}" },
-                { "suppressNotifications", $"{supressNotifications}" },
+                { "suppressNotifications", $"{suppressNotifications}" },
                 { "validateOnly", $"{validateOnly}" }
             };
 
@@ -212,7 +212,7 @@ namespace TfsClient
             int sourceWorkitemId, int destinationWorkitemId, 
             string relationType, IReadOnlyDictionary<string, string> relationAttributes = null,
             string expand = "All", bool bypassRules = false,
-            bool supressNotifications = true, bool validateOnly = false)
+            bool suppressNotifications = false, bool validateOnly = false)
         {
             if((relationType == null) || (relationType.Trim() == ""))
             {
@@ -226,7 +226,7 @@ namespace TfsClient
                 { "api-version", API_VERSION },
                 { "$expand", expand },
                 { "bypassRules", $"{bypassRules}" },
-                { "suppressNotifications", $"{supressNotifications}" },
+                { "suppressNotifications", $"{suppressNotifications}" },
                 { "validateOnly", $"{validateOnly}" }
             };
 

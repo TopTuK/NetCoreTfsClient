@@ -81,6 +81,7 @@ namespace TfsClient
             private ITfsServiceClient _tfsServiceClient;
             private Dictionary<string, JToken> _fields = new Dictionary<string, JToken>();
             private List<ITfsWorkitemRelation> _relations = new List<ITfsWorkitemRelation>();
+            private Dictionary<string, string> _updatedFields = new Dictionary<string, string>();
 
             public WorkItemType ItemType { get; }
             public string ItemTypeName { get; }
@@ -94,6 +95,11 @@ namespace TfsClient
             {
                 get
                 {
+                    if(_updatedFields.TryGetValue(fieldName, out string fieldValue))
+                    {
+                        return fieldValue;
+                    }
+
                     if (_fields.TryGetValue(fieldName, out JToken jField))
                     {
                         return jField.Type == JTokenType.String
@@ -105,14 +111,13 @@ namespace TfsClient
                 } 
                 set
                 {
-                    var jField = new JObject(value);
-                    if(_fields.ContainsKey(fieldName))
+                    if(_updatedFields.ContainsKey(fieldName))
                     {
-                        _fields[fieldName] = jField;
+                        _updatedFields[fieldName] = value;
                     }
                     else
                     {
-                        _fields.Add(fieldName, jField);
+                        _updatedFields.Add(fieldName, value);
                     }
                 }
             }
@@ -163,15 +168,17 @@ namespace TfsClient
 
             public UpdateFieldsResult UpdateFields()
             {
-                var fields = _fields
-                    .Select(fld => fld)
-                    .ToDictionary(fld => fld.Key, fld => this[fld.Key]);
+                if(_updatedFields.Count == 0)
+                {
+                    return UpdateFieldsResult.UPDATE_EMPTY;
+                }
 
                 try
                 {
-                    var item = _tfsServiceClient.UpdateWorkitemFields(Id, fields, expand: "fields") as TfsWorkitem;
+                    var item = _tfsServiceClient.UpdateWorkitemFields(Id, _updatedFields, expand: "fields") as TfsWorkitem;
                     if (item == null) return UpdateFieldsResult.UPDATE_FAIL;
 
+                    _updatedFields.Clear();
                     _fields = item._fields;
 
                     return UpdateFieldsResult.UPDATE_SUCCESS;

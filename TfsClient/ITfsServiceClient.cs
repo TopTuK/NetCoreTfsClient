@@ -19,13 +19,13 @@ namespace TfsClient
 
         ITfsWorkitem UpdateWorkitemFields(int workitemId, IReadOnlyDictionary<string, string> itemFields,
             string expand = "All", bool bypassRules = false,
-            bool supressNotifications = true, bool validateOnly = false);
+            bool suppressNotifications = false, bool validateOnly = false);
 
         ITfsWorkitem AddRelationLink(
             int sourceWorkitemId, int destinationWorkitemId,
             string relationType, IReadOnlyDictionary<string, string> relationAttributes = null,
             string expand = "All", bool bypassRules = false,
-            bool supressNotifications = true, bool validateOnly = false);
+            bool suppressNotifications = false, bool validateOnly = false);
         ITfsWorkitem AddRelationLink(
             int sourceWorkitemId, int destinationWorkitemId,
             WorkitemRelationType relationType, IReadOnlyDictionary<string, string> relationAttributes = null);

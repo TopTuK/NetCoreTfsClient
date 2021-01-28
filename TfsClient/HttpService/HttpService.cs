@@ -190,7 +190,8 @@ namespace TfsClient.HttpService
                 }
             }
 
-            request.AddJsonBody(requestBody);
+            request.AddHeader("Content-Type", "application/json-patch+json");
+            request.AddJsonBody(requestBody, @"application/json-patch+json");
             var response = _restClient.Patch(request);
 
             return new RestHttpResponse(response);
@@ -211,8 +212,9 @@ namespace TfsClient.HttpService
                 }
             }
 
-            request.AddJsonBody(requestBody);
             request.Method = Method.PATCH;
+            request.AddHeader("Content-Type", "application/json-patch+json");
+            request.AddJsonBody(requestBody, @"application/json-patch+json");
 
             var response = await _restClient.ExecuteAsync(request);
 

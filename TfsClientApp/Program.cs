@@ -29,6 +29,21 @@ namespace TfsClientApp
                 if(item != null)
                 {
                     DisplayTfsItemDetails(item);
+
+                    Console.Write("Enter new workitem title: ");
+                    var itemTitle = Console.ReadLine();
+                    item["System.Title"] = itemTitle;
+
+                    Console.WriteLine($"Before update {item["System.Title"]}");
+                    if (item.UpdateFields() == UpdateFieldsResult.UPDATE_SUCCESS)
+                    {
+                        Console.WriteLine("After update");
+                        DisplayTfsItemDetails(item);
+                    }
+                    else
+                    {
+                        Console.WriteLine("UPDATE FAILED");
+                    }
                 }
                 else
                 {

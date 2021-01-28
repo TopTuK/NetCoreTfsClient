@@ -27,6 +27,7 @@ namespace TfsClient
     public enum UpdateFieldsResult: byte
     {
         UPDATE_FAIL = 0,
+        UPDATE_EMPTY,
         UPDATE_SUCCESS
     }
 
