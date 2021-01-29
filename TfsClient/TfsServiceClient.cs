@@ -95,6 +95,15 @@ namespace TfsClient
         }
 
         private string GetWorkitemUrl(int workitemId) => $"{ServerUrl}/{_tfsUrl}/{WORKITEM_URL}/{workitemId}";
+        private Dictionary<string, string> MakeQueryParams(string expand, bool bypassRules,
+            bool suppressNotifications, bool validateOnly) => new Dictionary<string, string>()
+            {
+                { "api-version", API_VERSION },
+                { "$expand", expand },
+                { "bypassRules", $"{bypassRules}" },
+                { "suppressNotifications", $"{suppressNotifications}" },
+                { "validateOnly", $"{validateOnly}" }
+            };
 
         private IEnumerable<ITfsWorkitem> GetTfsItems(string requestUrl,
             IReadOnlyDictionary<string, string> requestParams = null,
@@ -184,14 +193,7 @@ namespace TfsClient
 
             var requestUrl = $"{_tfsUrlPrj}/{WORKITEM_URL}/{workitemId}";
 
-            var queryParams = new Dictionary<string, string>()
-            {
-                { "api-version", API_VERSION },
-                { "$expand", expand },
-                { "bypassRules", $"{bypassRules}" },
-                { "suppressNotifications", $"{suppressNotifications}" },
-                { "validateOnly", $"{validateOnly}" }
-            };
+            var queryParams = MakeQueryParams(expand, bypassRules, suppressNotifications, validateOnly);
 
             try
             {
@@ -221,14 +223,7 @@ namespace TfsClient
 
             var requestUrl = $"{_tfsUrlPrj}/{WORKITEM_URL}/{sourceWorkitemId}";
 
-            var queryParams = new Dictionary<string, string>()
-            {
-                { "api-version", API_VERSION },
-                { "$expand", expand },
-                { "bypassRules", $"{bypassRules}" },
-                { "suppressNotifications", $"{suppressNotifications}" },
-                { "validateOnly", $"{validateOnly}" }
-            };
+            var queryParams = MakeQueryParams(expand, bypassRules, suppressNotifications, validateOnly);
 
             var requestBody = new
             {
@@ -266,6 +261,35 @@ namespace TfsClient
             }
 
             return AddRelationLink(sourceWorkitemId, destinationWorkitemId, relTypeName, relationAttributes);
+        }
+
+        public ITfsWorkitem RemoveRelationLink(
+            int workitemId, int relationId,
+            string expand = "All", bool bypassRules = false,
+            bool suppressNotifications = false, bool validateOnly = false
+            )
+        {
+            var requestUrl = $"{_tfsUrlPrj}/{WORKITEM_URL}/{workitemId}";
+            var queryParams = MakeQueryParams(expand, bypassRules, suppressNotifications, validateOnly);
+
+            var requestBody = new
+            {
+                op = "remove",
+                path = $"/relations/{relationId}"
+            };
+
+            try
+            {
+                var response = _httpService.PatchJson(requestUrl, requestBody, customParams: queryParams);
+
+                return response.IsSuccess
+                    ? TfsWorkitemFactory.FromJsonItem(this, response.Content)
+                    : null;
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
         }
     }
 }

@@ -59,5 +59,10 @@ namespace TfsClient
         IReadOnlyList<ITfsWorkitemRelation> Relations { get; }
         UpdateRelationsResult AddRelationLink(int destinationWorkitemId, WorkitemRelationType relationType,
             IReadOnlyDictionary<string, string> relationAttributes = null);
+        UpdateRelationsResult RemoveRelationLinks(int destinationWorkitemId);
+        IEnumerable<ITfsWorkitemRelation> GetWorkitemRelations(WorkitemRelationType relationType);
+
+        IEnumerable<ITfsWorkitem> GetRelatedWorkitems(WorkitemRelationType relationType);
+        IEnumerable<ITfsWorkitem> GetRelatedWorkitems(string relationTypeName);
     }
 }

@@ -25,6 +25,11 @@ namespace TfsClient
             { WorkitemRelationType.Related, "System.LinkTypes.Related" },
         };
 
+        private static readonly List<string> IGNORE_FIELDS = new List<string>()
+        {
+            "System.Id"
+        };
+
         private class TfsWorkitemRelation : ITfsWorkitemRelation
         {
             private static readonly string WORKITEM_SUBSTR = "workItems/";
@@ -148,7 +153,7 @@ namespace TfsClient
                         }
                         else
                         {
-                            if (fieldKey != "System.Id")
+                            if (!IGNORE_FIELDS.Contains(fieldKey))
                             {
                                 _fields.Add(fieldKey, field.Value);
                             }
@@ -207,14 +212,63 @@ namespace TfsClient
                 {
                     return UpdateRelationsResult.UPDATE_FAIL;
                 }
-                throw new NotImplementedException();
+            }
+
+            public UpdateRelationsResult RemoveRelationLinks(int destinationWorkitemId)
+            {
+                var relIdx = _relations.FindIndex(relation => relation.WorkitemId == destinationWorkitemId);
+
+                if (relIdx < 0) return UpdateRelationsResult.UPDATE_FAIL;
+
+                try
+                {
+                    var item = _tfsServiceClient.RemoveRelationLink(Id, relIdx, expand: "relations") as TfsWorkitem;
+                    if (item == null) return UpdateRelationsResult.UPDATE_FAIL;
+
+                    _relations = item._relations;
+
+                    return UpdateRelationsResult.UPDATE_SUCCESS;
+                }
+                catch
+                {
+                    return UpdateRelationsResult.UPDATE_FAIL;
+                }
+            }
+
+            public IEnumerable<ITfsWorkitemRelation> GetWorkitemRelations(WorkitemRelationType relationType)
+            {
+                return _relations
+                    .Where(rel => rel.RelationType == relationType)
+                    .Select(rel => rel)
+                    .ToList();
+            }
+
+            public IEnumerable<ITfsWorkitem> GetRelatedWorkitems(WorkitemRelationType relationType)
+            {
+                if(relationType == WorkitemRelationType.Unknown)
+                {
+                    throw new ArgumentException("Relation type can't be unknown", "relationType");
+                }
+
+                var relationTypeName = RELATION_TYPE_MAP[relationType];
+                return GetRelatedWorkitems(relationTypeName);
+            }
+
+            public IEnumerable<ITfsWorkitem> GetRelatedWorkitems(string relationTypeName)
+            {
+                var relatedIds = _relations
+                    .Where(rel => rel.RelationTypeName == relationTypeName)
+                    .Select(rel => rel.WorkitemId)
+                    .ToList();
+                if (relatedIds.Count == 0) return Enumerable.Empty<ITfsWorkitem>();
+
+                return _tfsServiceClient.GetWorkitems(relatedIds);
             }
         }
 
         public static ITfsWorkitem FromJsonItem(ITfsServiceClient tfsService, string jsonItemStr)
         {
-            ITfsWorkitem item = null;
-
+            ITfsWorkitem item;
             try
             {
                 var jsonItem = JObject.Parse(jsonItemStr);

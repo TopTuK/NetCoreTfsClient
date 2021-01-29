@@ -29,5 +29,10 @@ namespace TfsClient
         ITfsWorkitem AddRelationLink(
             int sourceWorkitemId, int destinationWorkitemId,
             WorkitemRelationType relationType, IReadOnlyDictionary<string, string> relationAttributes = null);
+
+        ITfsWorkitem RemoveRelationLink(
+            int workitemId, int relationId,
+            string expand = "All", bool bypassRules = false,
+            bool suppressNotifications = false, bool validateOnly = false);
     }
 }
