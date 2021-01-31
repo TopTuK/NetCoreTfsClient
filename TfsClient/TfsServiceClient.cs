@@ -34,6 +34,9 @@ namespace TfsClient
         {
             return new TfsServiceClient(httpService, serverUrl, projectName);
         }
+
+        public static ITfsServiceClientWorkitemFacade GetTfsWorkitemService(this ITfsServiceClient tfsServiceClient) =>
+            new TfsServiceClientWorkitemFacade(tfsServiceClient);
     }
 
     internal class TfsServiceClient : ITfsServiceClient
