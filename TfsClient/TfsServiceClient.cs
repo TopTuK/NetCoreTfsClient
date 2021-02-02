@@ -43,6 +43,7 @@ namespace TfsClient
     {
         private const string API_VERSION = "6.0";
         private const string WORKITEM_URL = @"wit/workitems";
+        private const string WIQL_URL = @"wit/wiql";
 
         private readonly IHttpService _httpService;
         private readonly string _tfsUrl;
@@ -176,6 +177,60 @@ namespace TfsClient
             return resultItems;
         }
 
+        // https://docs.microsoft.com/en-us/rest/api/azure/devops/wit/work%20items/create?view=azure-devops-rest-6.0
+        public ITfsWorkitem CreateWorkitem(string itemType, IReadOnlyDictionary<string, string> itemFields = null,
+            string expand = "All", bool bypassRules = false,
+            bool suppressNotifications = false, bool validateOnly = false)
+        {
+            if (itemType == null)
+            {
+                throw new ArgumentNullException("itemType", "type can not be null");
+            }
+
+            var requestUrl = $"{_tfsUrlPrj}/{WORKITEM_URL}/${itemType}";
+
+            var queryParams = MakeQueryParams(expand, bypassRules, suppressNotifications, validateOnly);
+
+            // Media Types: "application/json-patch+json"
+            var requestBody = itemFields
+                .Select(fld => new {
+                    op = "add",
+                    path = $"/fields/{fld.Key}",
+                    @from = (string) null,
+                    value = fld.Value
+                })
+                .ToList();
+
+            var customHeaders = new Dictionary<string, string>()
+            {
+                { "Content-Type", "application/json-patch+json" }
+            };
+
+            try
+            {
+                var response = _httpService.PostJson(requestUrl, requestBody,
+                    customParams: queryParams, customHeaders: customHeaders);
+
+                return response.IsSuccess
+                    ? TfsWorkitemFactory.FromJsonItem(this, response.Content)
+                    : null;
+            }
+            catch(Exception ex)
+            {
+                throw ex;
+            }
+        }
+
+        public ITfsWorkitem CreateWorkitem(WorkItemType itemType, IReadOnlyDictionary<string, string> itemFields = null)
+        {
+            if(itemType == WorkItemType.Unknown)
+            {
+                throw new ArgumentException("Type can't be unknown", "itemType");
+            }
+
+            return CreateWorkitem(TfsWorkitemFactory.WI_TYPE_MAP[itemType], itemFields);
+        }
+
         // https://docs.microsoft.com/en-us/rest/api/azure/devops/wit/work%20items/update?view=azure-devops-rest-6.0
         public ITfsWorkitem UpdateWorkitemFields(int workitemId, IReadOnlyDictionary<string, string> itemFields,
             string expand = "All", bool bypassRules = false, 
@@ -198,9 +253,15 @@ namespace TfsClient
 
             var queryParams = MakeQueryParams(expand, bypassRules, suppressNotifications, validateOnly);
 
+            var customHeaders = new Dictionary<string, string>()
+            {
+                { "Content-Type", "application/json-patch+json" }
+            };
+
             try
             {
-                var response = _httpService.PatchJson(requestUrl, requestBody, customParams: queryParams);
+                var response = _httpService.PatchJson(requestUrl, requestBody, 
+                    customParams: queryParams, customHeaders: customHeaders);
 
                 return response.IsSuccess
                     ? TfsWorkitemFactory.FromJsonItem(this, response.Content)
@@ -240,9 +301,15 @@ namespace TfsClient
                 }
             };
 
+            var customHeaders = new Dictionary<string, string>()
+            {
+                { "Content-Type", "application/json-patch+json" }
+            };
+
             try
             {
-                var response = _httpService.PatchJson(requestUrl, requestBody, customParams: queryParams);
+                var response = _httpService.PatchJson(requestUrl, requestBody, 
+                    customParams: queryParams, customHeaders: customHeaders);
 
                 return response.IsSuccess
                     ? TfsWorkitemFactory.FromJsonItem(this, response.Content)
@@ -281,12 +348,56 @@ namespace TfsClient
                 path = $"/relations/{relationId}"
             };
 
+            var customHeaders = new Dictionary<string, string>()
+            {
+                { "Content-Type", "application/json-patch+json" }
+            };
+
             try
             {
-                var response = _httpService.PatchJson(requestUrl, requestBody, customParams: queryParams);
+                var response = _httpService.PatchJson(requestUrl, requestBody, 
+                    customParams: queryParams, customHeaders: customHeaders);
 
                 return response.IsSuccess
                     ? TfsWorkitemFactory.FromJsonItem(this, response.Content)
+                    : null;
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+
+        public ITfsWiqlResult RunWiql(string query, int maxTop = -1)
+        {
+            if(query == null)
+            {
+                throw new ArgumentException("param can't be null", "query");
+            }
+
+            var requestBody = new
+            {
+                query = query
+            };
+
+            var queryParams = new Dictionary<string, string>()
+            {
+                { "api-version", API_VERSION }
+            };
+
+            if(maxTop > 0)
+            {
+                queryParams.Add("$top", maxTop.ToString());
+            }
+
+            var requestUrl = $"{_tfsUrlPrj}/{WIQL_URL}";
+
+            try
+            {
+                var response = _httpService.PostJson(requestUrl, requestBody, customParams: queryParams);
+
+                return response.IsSuccess
+                    ? new TfsWiqlResult(response.Content)
                     : null;
             }
             catch (Exception ex)

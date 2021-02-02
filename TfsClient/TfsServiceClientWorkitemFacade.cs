@@ -41,5 +41,12 @@ namespace TfsClient
             string expand = "All", bool bypassRules = false,
             bool suppressNotifications = false, bool validateOnly = false) =>
             _tfsService.UpdateWorkitemFields(workitemId, itemFields, expand, bypassRules, suppressNotifications, validateOnly);
+
+        public ITfsWorkitem CreateWorkitem(string itemType, IReadOnlyDictionary<string, string> itemFields = null,
+            string expand = "All", bool bypassRules = false,
+            bool suppressNotifications = false, bool validateOnly = false) =>
+            _tfsService.CreateWorkitem(itemType, itemFields, expand, bypassRules, suppressNotifications, validateOnly);
+        public ITfsWorkitem CreateWorkitem(WorkItemType itemType, IReadOnlyDictionary<string, string> itemFields = null) =>
+            _tfsService.CreateWorkitem(itemType, itemFields);
     }
 }

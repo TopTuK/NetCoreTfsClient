@@ -40,9 +40,11 @@ namespace TfsClient.HttpService
             IReadOnlyDictionary<string, string> customHeaders = null);
         IHttpResponse PostJson(string resource,
             object requestBody,
+            IReadOnlyDictionary<string, string> customParams = null,
             IReadOnlyDictionary<string, string> customHeaders = null);
         Task<IHttpResponse> PostJsonAsync(string resource,
             object requestBody,
+            IReadOnlyDictionary<string, string> customParams = null,
             IReadOnlyDictionary<string, string> customHeaders = null);
 
         IHttpResponse Patch(string resource,

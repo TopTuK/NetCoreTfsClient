@@ -16,6 +16,14 @@ namespace TfsClient
             { "Bug", WorkItemType.Bug }
         };
 
+        public static readonly IReadOnlyDictionary<WorkItemType, string> WI_TYPE_MAP = new Dictionary<WorkItemType, string>()
+        {
+            { WorkItemType.Requirement, "Requirement" },
+            { WorkItemType.ChangeRequest, "Change request" },
+            { WorkItemType.Task, "Task" },
+            { WorkItemType.Bug, "Bug" }
+        };
+
         public static readonly IReadOnlyDictionary<WorkitemRelationType, string> RELATION_TYPE_MAP = new Dictionary<WorkitemRelationType, string>()
         {
             { WorkitemRelationType.AffectedBy, "Microsoft.VSTS.Common.Affects-Reverse" },

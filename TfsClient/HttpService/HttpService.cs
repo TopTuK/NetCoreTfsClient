@@ -132,10 +132,28 @@ namespace TfsClient.HttpService
 
         public IHttpResponse PostJson(string resource,
             object requestBody,
+            IReadOnlyDictionary<string, string> customParams = null,
             IReadOnlyDictionary<string, string> customHeaders = null)
         {
             var request = MakeRequest(resource, customHeaders: customHeaders);
-            request.AddJsonBody(requestBody);
+
+            if (customParams != null)
+            {
+                foreach (var queryParam in customParams)
+                {
+                    request.AddQueryParameter(queryParam.Key, queryParam.Value);
+                }
+            }
+
+            if((customHeaders != null) && (customHeaders.ContainsKey("Content-Type")))
+            {
+                request.AddJsonBody(requestBody, customHeaders["Content-Type"]);
+            }
+            else
+            {
+                request.AddJsonBody(requestBody);
+            }
+            
             var response = _restClient.Post(request);
 
             return new RestHttpResponse(response);
@@ -143,11 +161,29 @@ namespace TfsClient.HttpService
 
         public async Task<IHttpResponse> PostJsonAsync(string resource,
             object requestBody,
+            IReadOnlyDictionary<string, string> customParams = null,
             IReadOnlyDictionary<string, string> customHeaders = null)
         {
             var request = MakeRequest(resource, customHeaders: customHeaders);
-            request.AddJsonBody(requestBody);
+
+            if (customParams != null)
+            {
+                foreach (var queryParam in customParams)
+                {
+                    request.AddQueryParameter(queryParam.Key, queryParam.Value);
+                }
+            }
+
             request.Method = Method.POST;
+
+            if ((customHeaders != null) && (customHeaders.ContainsKey("Content-Type")))
+            {
+                request.AddJsonBody(requestBody, customHeaders["Content-Type"]);
+            }
+            else
+            {
+                request.AddJsonBody(requestBody);
+            }
 
             var response = await _restClient.ExecuteAsync(request);
 
@@ -190,8 +226,15 @@ namespace TfsClient.HttpService
                 }
             }
 
-            request.AddHeader("Content-Type", "application/json-patch+json");
-            request.AddJsonBody(requestBody, @"application/json-patch+json");
+            if ((customHeaders != null) && (customHeaders.ContainsKey("Content-Type")))
+            {
+                request.AddJsonBody(requestBody, customHeaders["Content-Type"]);
+            }
+            else
+            {
+                request.AddJsonBody(requestBody);
+            }
+
             var response = _restClient.Patch(request);
 
             return new RestHttpResponse(response);
@@ -213,8 +256,15 @@ namespace TfsClient.HttpService
             }
 
             request.Method = Method.PATCH;
-            request.AddHeader("Content-Type", "application/json-patch+json");
-            request.AddJsonBody(requestBody, @"application/json-patch+json");
+
+            if ((customHeaders != null) && (customHeaders.ContainsKey("Content-Type")))
+            {
+                request.AddJsonBody(requestBody, customHeaders["Content-Type"]);
+            }
+            else
+            {
+                request.AddJsonBody(requestBody);
+            }
 
             var response = await _restClient.ExecuteAsync(request);
 

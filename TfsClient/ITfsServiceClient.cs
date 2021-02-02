@@ -11,6 +11,11 @@ namespace TfsClient
         IEnumerable<ITfsWorkitem> GetWorkitems(IEnumerable<int> ids,
             IEnumerable<string> fields = null, string expand = "All", int batchSize = 50);
 
+        ITfsWorkitem CreateWorkitem(string itemType, IReadOnlyDictionary<string, string> itemFields = null,
+            string expand = "All", bool bypassRules = false,
+            bool suppressNotifications = false, bool validateOnly = false);
+        ITfsWorkitem CreateWorkitem(WorkItemType itemType, IReadOnlyDictionary<string, string> itemFields = null);
+
         ITfsWorkitem UpdateWorkitemFields(int workitemId, IReadOnlyDictionary<string, string> itemFields,
             string expand = "All", bool bypassRules = false,
             bool suppressNotifications = false, bool validateOnly = false);
@@ -43,6 +48,11 @@ namespace TfsClient
         IEnumerable<ITfsWorkitem> GetWorkitems(IEnumerable<int> ids,
             IEnumerable<string> fields = null, string expand = "All", int batchSize = 50);
 
+        ITfsWorkitem CreateWorkitem(string itemType, IReadOnlyDictionary<string, string> itemFields = null,
+            string expand = "All", bool bypassRules = false,
+            bool suppressNotifications = false, bool validateOnly = false);
+        ITfsWorkitem CreateWorkitem(WorkItemType itemType, IReadOnlyDictionary<string, string> itemFields = null);
+
         ITfsWorkitem UpdateWorkitemFields(int workitemId, IReadOnlyDictionary<string, string> itemFields,
             string expand = "All", bool bypassRules = false,
             bool suppressNotifications = false, bool validateOnly = false);
@@ -60,5 +70,7 @@ namespace TfsClient
             int workitemId, int relationId,
             string expand = "All", bool bypassRules = false,
             bool suppressNotifications = false, bool validateOnly = false);
+
+        ITfsWiqlResult RunWiql(string query, int maxTop = -1);
     }
 }
