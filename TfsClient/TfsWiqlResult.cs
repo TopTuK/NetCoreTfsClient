@@ -1,12 +1,17 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 
 namespace TfsClient
 {
-    internal class TfsWiqlResult : ITfsWiqlResult
+    internal static class TfsWiqlFactory
     {
-        public TfsWiqlResult(string responseContent)
+        private class TfsWiqlResult : ITfsWiqlResult
+        {
+        }
+
+        public static ITfsWiqlResult FromContentResponse(ITfsServiceClient tfsServiceClient, string contentREsponse)
         {
             throw new NotImplementedException();
         }

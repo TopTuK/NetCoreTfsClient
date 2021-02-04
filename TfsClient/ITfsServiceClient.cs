@@ -42,6 +42,7 @@ namespace TfsClient
         string Project { get; }
 
         void Authentificate(string userName, string userPassword);
+        void Authentificate(string personalAccessToken);
 
         ITfsWorkitem GetSingleWorkitem(int id, 
             IEnumerable<string> fields = null, string expand = "All");

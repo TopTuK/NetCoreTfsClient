@@ -29,6 +29,20 @@ namespace TfsClient
             return tfsServiceClient;
         }
 
+        public static ITfsServiceClient CreateTfsServiceClient(string serverUrl, string projectName,
+            string personalAccessToken)
+        {
+            if(personalAccessToken == null)
+            {
+                throw new ArgumentException("Token must be not null", "personalAccessToken");
+            }
+
+            var tfsServiceClient = new TfsServiceClient(HttpServiceFactory.CreateHttpService(), serverUrl, projectName);
+            tfsServiceClient.Authentificate(personalAccessToken);
+
+            return tfsServiceClient;
+        }
+
         public static ITfsServiceClient CreateTfsServiceClient(IHttpService httpService, 
             string serverUrl, string projectName)
         {
@@ -96,6 +110,11 @@ namespace TfsClient
         public void Authentificate(string userName, string userPassword)
         {
             _httpService.Authentificate(userName, userPassword);
+        }
+
+        public void Authentificate(string personalAccessToken)
+        {
+            _httpService.Authentificate(personalAccessToken);
         }
 
         private string GetWorkitemUrl(int workitemId) => $"{ServerUrl}/{_tfsUrl}/{WORKITEM_URL}/{workitemId}";
@@ -397,7 +416,7 @@ namespace TfsClient
                 var response = _httpService.PostJson(requestUrl, requestBody, customParams: queryParams);
 
                 return response.IsSuccess
-                    ? new TfsWiqlResult(response.Content)
+                    ? TfsWiqlFactory.FromContentResponse(this, response.Content)
                     : null;
             }
             catch (Exception ex)

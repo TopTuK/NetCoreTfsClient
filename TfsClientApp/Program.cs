@@ -9,6 +9,7 @@ namespace TfsClientApp
         {
             Console.WriteLine("Hello to .net Core Tfs Sample application!");
 
+            /*
             Console.Write("Enter TFS server URl: ");
             var tfsServerUrl = Console.ReadLine();
             Console.Write("Enter TFS project: ");
@@ -21,6 +22,15 @@ namespace TfsClientApp
 
             var tfsService = TfsServiceClientFactory.CreateTfsServiceClient(tfsServerUrl, tfsCollection,
                 userName, userPassword);
+            */
+            var tfsServerUrl = @"https://smartagency.visualstudio.com/";
+            var tfsCollection = "DefaultCollection";
+
+            Console.Write("Personal access token: ");
+            var personalAccessToken = Console.ReadLine();
+
+            var tfsService = TfsServiceClientFactory.CreateTfsServiceClient(tfsServerUrl, tfsCollection,
+                personalAccessToken);
 
             Console.Write("Enter Workitem id: ");
             if(int.TryParse(Console.ReadLine(), out int workId))
@@ -30,6 +40,7 @@ namespace TfsClientApp
                 {
                     DisplayTfsItemDetails(item);
 
+                    /*
                     Console.Write("Enter new workitem title: ");
                     var itemTitle = Console.ReadLine();
                     item["System.Title"] = itemTitle;
@@ -44,6 +55,7 @@ namespace TfsClientApp
                     {
                         Console.WriteLine("UPDATE FAILED");
                     }
+                    */
                 }
                 else
                 {

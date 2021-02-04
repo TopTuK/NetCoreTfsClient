@@ -18,6 +18,26 @@ namespace TfsClient.HttpService
 
     internal class HttpService : IHttpService
     {
+        // https://docs.microsoft.com/en-us/azure/devops/organizations/accounts/use-personal-access-tokens-to-authenticate?view=azure-devops&tabs=preview-page
+        private class TfsPatAuthenticator : IAuthenticator
+        {
+            private string _personalAccessToken;
+
+            public TfsPatAuthenticator(string personalAccessToken)
+            {
+                _personalAccessToken = Encoding.UTF8.GetString(Encoding.Default.GetBytes("Basic "))
+                    + Convert.ToBase64String(
+                        Encoding.ASCII.GetBytes(
+                            string.Format("{0}:{1}", "", personalAccessToken)
+                    ));
+            }
+
+            public void Authenticate(IRestClient client, IRestRequest request)
+            {
+                request.AddHeader("Authorization", _personalAccessToken);
+            }
+        }
+
         private class RestHttpResponse : IHttpResponse
         {
             private IRestResponse _restResponse;
@@ -61,6 +81,11 @@ namespace TfsClient.HttpService
         public void Authentificate(string userName, string userPassword)
         {
             _restClient.Authenticator = new NtlmAuthenticator(userName, userPassword);
+        }
+
+        public void Authentificate(string personalAccessToken)
+        {
+            _restClient.Authenticator = new TfsPatAuthenticator(personalAccessToken);
         }
 
         private IRestRequest MakeRequest(string resource,

@@ -24,6 +24,7 @@ namespace TfsClient.HttpService
         Uri BaseUrl { get; set; }
 
         void Authentificate(string userName, string userPassword);
+        void Authentificate(string personalAccessToken);
 
         IHttpResponse Get(string resource,
             IReadOnlyDictionary<string, string> customParams = null,
