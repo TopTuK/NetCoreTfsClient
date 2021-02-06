@@ -5,6 +5,8 @@ namespace TfsClientApp
 {
     class Program
     {
+        private static string LINE_SEPARATOR = new string('*', 30);
+
         static void Main(string[] args)
         {
             Console.WriteLine("Hello to .net Core Tfs Sample application!");
@@ -39,23 +41,29 @@ namespace TfsClientApp
                 if(item != null)
                 {
                     DisplayTfsItemDetails(item);
+                    DisplayTfsItemRelations(item);
+                    //DisplayTfsItemChilds(item);
 
-                    /*
-                    Console.Write("Enter new workitem title: ");
-                    var itemTitle = Console.ReadLine();
-                    item["System.Title"] = itemTitle;
+                    Console.WriteLine();
+                    Console.WriteLine("*** CHANGE ITEM TITLE ***");
+                    item["System.Title"] = string.Format("{0} - edited", item["System.Title"]);
+                    item.UpdateFields();
+                    DisplayTfsItemDetails(item);
 
-                    Console.WriteLine($"Before update {item["System.Title"]}");
-                    if (item.UpdateFields() == UpdateFieldsResult.UPDATE_SUCCESS)
+                    Console.WriteLine();
+                    Console.WriteLine("*** Manage relations ***");
+                    item = tfsService.AddRelationLink(2, 3, WorkitemRelationType.Affects);
+                    if (item != null)
                     {
-                        Console.WriteLine("After update");
-                        DisplayTfsItemDetails(item);
+                        DisplayTfsItemRelations(item);
+
+                        item.RemoveRelationLinks(3);
+                        DisplayTfsItemRelations(item);
                     }
                     else
                     {
-                        Console.WriteLine("UPDATE FAILED");
+                        Console.WriteLine("ITEM is null");
                     }
-                    */
                 }
                 else
                 {
@@ -72,12 +80,44 @@ namespace TfsClientApp
 
         private static void DisplayTfsItemDetails(ITfsWorkitem workitem)
         {
+            Console.WriteLine(LINE_SEPARATOR);
+
             Console.WriteLine($"Found item: {workitem.Id}");
             Console.WriteLine($"Workitem type: {workitem.ItemType} - {workitem.ItemTypeName}");
             Console.WriteLine($"Workitem url: {workitem.Url}");
             Console.WriteLine($"Workitem fields: {string.Join(',', workitem.FieldNames)}");
 
             Console.WriteLine($"Workitem title: {workitem["System.Title"]}");
+
+            Console.WriteLine(LINE_SEPARATOR);
+        }
+
+        private static void DisplayTfsItemRelations(ITfsWorkitem workitem)
+        {
+            Console.WriteLine(LINE_SEPARATOR);
+
+            Console.WriteLine("Workitem relations");
+            foreach(var rel in workitem.Relations)
+            {
+                Console.WriteLine($"[{rel.RelationTypeName}]: {rel.RelationType} -> {rel.WorkitemId}");
+            }
+
+            Console.WriteLine(LINE_SEPARATOR);
+        }
+
+        private static void DisplayTfsItemChilds(ITfsWorkitem workitem)
+        {
+            Console.WriteLine(LINE_SEPARATOR);
+
+            Console.WriteLine("Workitem CHILD relations");
+            var items = workitem.GetRelatedWorkitems(WorkitemRelationType.Child);
+
+            foreach(var item in items)
+            {
+                Console.WriteLine($"{item.Id} [{item.ItemType} : {item.ItemTypeName}] {item["System.Title"]}");
+            }
+
+            Console.WriteLine(LINE_SEPARATOR);
         }
     }
 }

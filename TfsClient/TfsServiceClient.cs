@@ -117,7 +117,7 @@ namespace TfsClient
             _httpService.Authentificate(personalAccessToken);
         }
 
-        private string GetWorkitemUrl(int workitemId) => $"{ServerUrl}/{_tfsUrl}/{WORKITEM_URL}/{workitemId}";
+        private string GetWorkitemUrl(int workitemId) => $"{ServerUrl}{_tfsUrl}{WORKITEM_URL}/{workitemId}";
         private Dictionary<string, string> MakeQueryParams(string expand, bool bypassRules,
             bool suppressNotifications, bool validateOnly) => new Dictionary<string, string>()
             {
@@ -304,19 +304,22 @@ namespace TfsClient
                 throw new ArgumentNullException("relationType", "parametr is null or empty");
             }
 
-            var requestUrl = $"{_tfsUrlPrj}/{WORKITEM_URL}/{sourceWorkitemId}";
+            var requestUrl = $"{_tfsUrlPrj}{WORKITEM_URL}/{sourceWorkitemId}";
 
             var queryParams = MakeQueryParams(expand, bypassRules, suppressNotifications, validateOnly);
 
-            var requestBody = new
-            {
-                op = "add",
-                path = @"/relations/-",
-                value = new
+            var requestBody = new[]
+            { 
+                new
                 {
-                    rel = relationType,
-                    url = GetWorkitemUrl(destinationWorkitemId),
-                    attributes = relationAttributes
+                    op = "add",
+                    path = @"/relations/-",
+                    value = new
+                    {
+                        rel = relationType,
+                        url = GetWorkitemUrl(destinationWorkitemId),
+                        attributes = relationAttributes
+                    }
                 }
             };
 
@@ -361,10 +364,13 @@ namespace TfsClient
             var requestUrl = $"{_tfsUrlPrj}/{WORKITEM_URL}/{workitemId}";
             var queryParams = MakeQueryParams(expand, bypassRules, suppressNotifications, validateOnly);
 
-            var requestBody = new
+            var requestBody = new[]
             {
-                op = "remove",
-                path = $"/relations/{relationId}"
+                new
+                {
+                    op = "remove",
+                    path = $"/relations/{relationId}"
+                }
             };
 
             var customHeaders = new Dictionary<string, string>()

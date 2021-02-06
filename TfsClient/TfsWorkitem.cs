@@ -11,7 +11,7 @@ namespace TfsClient
         private static readonly IReadOnlyDictionary<string, WorkItemType> WorkItemTypeMap = new Dictionary<string, WorkItemType>()
         {
             { "Requirement", WorkItemType.Requirement },
-            { "Change request", WorkItemType.ChangeRequest },
+            { "Change Request", WorkItemType.ChangeRequest },
             { "Task", WorkItemType.Task },
             { "Bug", WorkItemType.Bug }
         };
@@ -19,7 +19,7 @@ namespace TfsClient
         public static readonly IReadOnlyDictionary<WorkItemType, string> WI_TYPE_MAP = new Dictionary<WorkItemType, string>()
         {
             { WorkItemType.Requirement, "Requirement" },
-            { WorkItemType.ChangeRequest, "Change request" },
+            { WorkItemType.ChangeRequest, "Change Request" },
             { WorkItemType.Task, "Task" },
             { WorkItemType.Bug, "Bug" }
         };
