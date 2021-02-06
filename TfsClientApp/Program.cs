@@ -34,48 +34,35 @@ namespace TfsClientApp
             var tfsService = TfsServiceClientFactory.CreateTfsServiceClient(tfsServerUrl, tfsCollection,
                 personalAccessToken);
 
-            Console.Write("Enter Workitem id: ");
-            if(int.TryParse(Console.ReadLine(), out int workId))
+            DisplayWiqlQueryResult(tfsService);
+
+            Console.WriteLine("Meow!");
+        }
+
+        private static void DisplayWiqlQueryResult(ITfsServiceClient tfsClient)
+        {
+            var query = @"Select [System.Id], [System.Title], [System.State] From WorkItems Where [System.WorkItemType] = 'Requirement' order by [Microsoft.VSTS.Common.Priority] asc, [System.CreatedDate] desc";
+
+            Console.WriteLine(LINE_SEPARATOR);
+            Console.WriteLine("Wiql query");
+
+            var res = tfsClient.RunWiql(query);
+            if (res != null)
             {
-                var item = tfsService.GetSingleWorkitem(workId);
-                if(item != null)
+                Console.WriteLine($"Wiql Result empty: {res.IsEmpty}");
+                Console.WriteLine($"Items count: {res.Count}");
+
+                foreach(var item in res.GetWorkitems())
                 {
-                    DisplayTfsItemDetails(item);
-                    DisplayTfsItemRelations(item);
-                    //DisplayTfsItemChilds(item);
-
-                    Console.WriteLine();
-                    Console.WriteLine("*** CHANGE ITEM TITLE ***");
-                    item["System.Title"] = string.Format("{0} - edited", item["System.Title"]);
-                    item.UpdateFields();
-                    DisplayTfsItemDetails(item);
-
-                    Console.WriteLine();
-                    Console.WriteLine("*** Manage relations ***");
-                    item = tfsService.AddRelationLink(2, 3, WorkitemRelationType.Affects);
-                    if (item != null)
-                    {
-                        DisplayTfsItemRelations(item);
-
-                        item.RemoveRelationLinks(3);
-                        DisplayTfsItemRelations(item);
-                    }
-                    else
-                    {
-                        Console.WriteLine("ITEM is null");
-                    }
-                }
-                else
-                {
-                    Console.WriteLine($"Item {workId} is not found!");
+                    Console.WriteLine($"{item.Id} {item["System.Title"]}");
                 }
             }
             else
             {
-                Console.WriteLine("Invalid workitem id");
+                Console.WriteLine("WIQL result is null");
             }
 
-            Console.WriteLine("Meow!");
+            Console.WriteLine(LINE_SEPARATOR);
         }
 
         private static void DisplayTfsItemDetails(ITfsWorkitem workitem)

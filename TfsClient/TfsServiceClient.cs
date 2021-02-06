@@ -361,7 +361,7 @@ namespace TfsClient
             bool suppressNotifications = false, bool validateOnly = false
             )
         {
-            var requestUrl = $"{_tfsUrlPrj}/{WORKITEM_URL}/{workitemId}";
+            var requestUrl = $"{_tfsUrlPrj}{WORKITEM_URL}/{workitemId}";
             var queryParams = MakeQueryParams(expand, bypassRules, suppressNotifications, validateOnly);
 
             var requestBody = new[]
@@ -415,7 +415,7 @@ namespace TfsClient
                 queryParams.Add("$top", maxTop.ToString());
             }
 
-            var requestUrl = $"{_tfsUrlPrj}/{WIQL_URL}";
+            var requestUrl = $"{_tfsUrlPrj}{WIQL_URL}";
 
             try
             {
