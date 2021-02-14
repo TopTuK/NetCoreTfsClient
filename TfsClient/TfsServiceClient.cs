@@ -250,6 +250,72 @@ namespace TfsClient
             return CreateWorkitem(TfsWorkitemFactory.WI_TYPE_MAP[itemType], itemFields);
         }
 
+        public ITfsWorkitem CopyWorkitem(int sourceItemId, IReadOnlyDictionary<string, string> destinationItemFields = null)
+        {
+            var sourceItem = GetSingleWorkitem(sourceItemId);
+
+            return (sourceItem != null)
+                ? CopyWorkitem(sourceItem, destinationItemFields)
+                : null;
+        }
+
+        public ITfsWorkitem CopyWorkitem(ITfsWorkitem sourceItem, 
+            IReadOnlyDictionary<string, string> destinationItemFields = null)
+        {
+            if(sourceItem == null)
+            {
+                throw new ArgumentException("Source item can't be null", "sourceItem");
+            }
+
+            var ignoreFields = new List<string>
+            {
+                "System.TeamProject",
+                "System.AreaPath",
+                "System.AreaId",
+                "System.AreaLevel1",
+                "System.AreaLevel2",
+                "System.AreaLevel3",
+                "System.AreaLevel4",
+                "System.Id",
+                "System.NodeName",
+                "System.Rev",
+                "System.AutorizedDate",
+                "System.RevisedDate",
+                "System.IterationId",
+                "System.IterationLevel1",
+                "System.IterationLevel2",
+                "System.IterationLevel3",
+                "System.IterationLevel4",
+                "System.CreatedBy",
+                "System.ChangedDate",
+                "System.ChangedBy",
+                "System.AuthorizedAs",
+                "System.AuthorizedDate",
+                "System.Watermark"
+            };
+
+            var itemTypeName = sourceItem.ItemTypeName;
+            var sourceItemFields = sourceItem.FieldNames;
+
+            var fields = new Dictionary<string, string>(sourceItemFields.Count);
+            foreach(var fldName in sourceItemFields)
+            {
+                if (ignoreFields.Contains(fldName)) continue;
+
+                string fldValue = sourceItem[fldName];
+                if((destinationItemFields != null) && (destinationItemFields.ContainsKey(fldName)))
+                {
+                    fldValue = destinationItemFields[fldName];
+                }
+
+                fields.Add(fldName, fldValue);
+            }
+
+            return CreateWorkitem(itemTypeName, itemFields: fields);
+
+            throw new NotImplementedException();
+        }
+
         // https://docs.microsoft.com/en-us/rest/api/azure/devops/wit/work%20items/update?view=azure-devops-rest-6.0
         public ITfsWorkitem UpdateWorkitemFields(int workitemId, IReadOnlyDictionary<string, string> itemFields,
             string expand = "All", bool bypassRules = false, 

@@ -13,13 +13,12 @@ namespace TfsClient
             _tfsService = tfsService;
         }
 
-        public ITfsWorkitem AddRelationLink(int sourceWorkitemId, int destinationWorkitemId, 
-            string relationType, IReadOnlyDictionary<string, string> relationAttributes = null, 
+        public ITfsWorkitem AddRelationLink(int sourceWorkitemId, int destinationWorkitemId,
+            string relationType, IReadOnlyDictionary<string, string> relationAttributes = null,
             string expand = "All", bool bypassRules = false,
-            bool suppressNotifications = false, bool validateOnly = false)
-        {
-            throw new NotImplementedException();
-        }
+            bool suppressNotifications = false, bool validateOnly = false) =>
+            _tfsService.AddRelationLink(sourceWorkitemId, destinationWorkitemId, relationType,
+                relationAttributes, expand, bypassRules);
 
         public ITfsWorkitem AddRelationLink(int sourceWorkitemId, int destinationWorkitemId,
             WorkitemRelationType relationType, IReadOnlyDictionary<string, string> relationAttributes = null) =>
@@ -48,5 +47,10 @@ namespace TfsClient
             _tfsService.CreateWorkitem(itemType, itemFields, expand, bypassRules, suppressNotifications, validateOnly);
         public ITfsWorkitem CreateWorkitem(WorkItemType itemType, IReadOnlyDictionary<string, string> itemFields = null) =>
             _tfsService.CreateWorkitem(itemType, itemFields);
+
+        public ITfsWorkitem CopyWorkitem(int sourceItemId, IReadOnlyDictionary<string, string> destinationItemFields = null) =>
+            _tfsService.CopyWorkitem(sourceItemId, destinationItemFields);
+        public ITfsWorkitem CopyWorkitem(ITfsWorkitem sourceItem, IReadOnlyDictionary<string, string> destinationItemFields = null) =>
+            _tfsService.CopyWorkitem(sourceItem, destinationItemFields);
     }
 }
