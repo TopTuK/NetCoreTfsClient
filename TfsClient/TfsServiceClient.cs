@@ -58,6 +58,7 @@ namespace TfsClient
         private const string API_VERSION = "6.0";
         private const string WORKITEM_URL = @"wit/workitems";
         private const string WIQL_URL = @"wit/wiql";
+        private const string QUERY_URL = @"wit/queries";
 
         private readonly IHttpService _httpService;
         private readonly string _tfsUrl;
@@ -454,6 +455,34 @@ namespace TfsClient
                     : null;
             }
             catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+
+        public ITfsWiqlResult RunSavedQuery(string queryId)
+        {
+            if (queryId == null)
+            {
+                throw new ArgumentException("param can't be null", "queryId");
+            }
+
+            var queryParams = new Dictionary<string, string>()
+            {
+                { "api-version", API_VERSION },
+                { "$expand", "clauses" }
+            };
+
+            var requestUrl = $"{_tfsUrlPrj}{QUERY_URL}/{queryId}";
+            try
+            {
+                var response = _httpService.Get(requestUrl, queryParams);
+
+                return response.IsSuccess
+                    ? TfsWiqlFactory.FromQueryResponse(this, response.Content)
+                    : null;
+            }
+            catch(Exception ex)
             {
                 throw ex;
             }

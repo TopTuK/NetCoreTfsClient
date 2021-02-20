@@ -26,7 +26,7 @@ namespace TfsClientApp
                 userName, userPassword);
             */
             var tfsServerUrl = @"https://smartagency.visualstudio.com/";
-            var tfsCollection = "DefaultCollection";
+            var tfsCollection = "DefaultCollection/Test TFS project";
 
             Console.Write("Personal access token: ");
             var personalAccessToken = Console.ReadLine();
@@ -34,9 +34,35 @@ namespace TfsClientApp
             var tfsService = TfsServiceClientFactory.CreateTfsServiceClient(tfsServerUrl, tfsCollection,
                 personalAccessToken);
 
-            DisplayWiqlQueryResult(tfsService);
+            DisplayWiqlQueryByIdResult(tfsService);
 
             Console.WriteLine("Meow!");
+        }
+
+        private static void DisplayWiqlQueryByIdResult(ITfsServiceClient tfsClient)
+        {
+            var queryId = @"ff710598-9708-4339-9496-3fc53c929398";
+
+            Console.WriteLine(LINE_SEPARATOR);
+            Console.WriteLine("Wiql query by QueryId");
+
+            var res = tfsClient.RunSavedQuery(queryId);
+            if (res != null)
+            {
+                Console.WriteLine($"Wiql Result empty: {res.IsEmpty}");
+                Console.WriteLine($"Items count: {res.Count}");
+
+                foreach (var item in res.GetWorkitems())
+                {
+                    Console.WriteLine($"{item.Id} {item["System.Title"]}");
+                }
+            }
+            else
+            {
+                Console.WriteLine("WIQL result is null");
+            }
+
+            Console.WriteLine(LINE_SEPARATOR);
         }
 
         private static void DisplayWiqlQueryResult(ITfsServiceClient tfsClient)

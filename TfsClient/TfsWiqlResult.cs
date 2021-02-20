@@ -59,5 +59,20 @@ namespace TfsClient
                 return null;
             }
         }
+
+        public static ITfsWiqlResult FromQueryResponse(ITfsServiceClient tfsServiceClient, string contentResponse)
+        {
+            try
+            {
+                var jsonObj = JObject.Parse(contentResponse);
+                if (jsonObj["wiql"] == null) return null;
+
+                return tfsServiceClient.RunWiql(jsonObj["wiql"].ToObject<string>());
+            }
+            catch
+            {
+                return null;
+            }
+        }
     }
 }

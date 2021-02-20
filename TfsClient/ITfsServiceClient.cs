@@ -80,6 +80,7 @@ namespace TfsClient
             string expand = "All", bool bypassRules = false,
             bool suppressNotifications = false, bool validateOnly = false);
 
+        ITfsWiqlResult RunSavedQuery(string queryId);
         ITfsWiqlResult RunWiql(string query, int maxTop = -1);
     }
 }
