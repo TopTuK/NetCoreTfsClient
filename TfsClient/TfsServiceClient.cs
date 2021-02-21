@@ -59,6 +59,7 @@ namespace TfsClient
         private const string WORKITEM_URL = @"wit/workitems";
         private const string WIQL_URL = @"wit/wiql";
         private const string QUERY_URL = @"wit/queries";
+        private const string CHANGESET_URL = @"tfvc/changesets";
 
         private readonly IHttpService _httpService;
         private readonly string _tfsUrl;
@@ -521,6 +522,30 @@ namespace TfsClient
                     : null;
             }
             catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+
+        public ITfsChangeset GetChangeset(int changesetId)
+        {
+            var queryParams = new Dictionary<string, string>()
+            {
+                { "api-version", API_VERSION },
+                { "includeWorkItems", "true" }
+            };
+
+            var requestUrl = $"{_tfsUrlPrj}{WIQL_URL}/{changesetId}";
+
+            try
+            {
+                var response = _httpService.Get(requestUrl, customParams: queryParams);
+
+                return response.IsSuccess
+                    ? TfsChangesetFactory.FromResponse(this, response.Content)
+                    : null;
+            }
+            catch(Exception ex)
             {
                 throw ex;
             }
