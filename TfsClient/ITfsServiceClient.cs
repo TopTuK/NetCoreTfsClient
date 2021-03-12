@@ -114,4 +114,40 @@ namespace TfsClient
             string expand = "All", bool bypassRules = false,
             bool suppressNotifications = false, bool validateOnly = false);
     }
+
+    public interface IAsyncTfsServiceClientWorkitemFacade
+    {
+        // Get Workitems
+        Task<ITfsWorkitem> GetSingleWorkitemAsync(int id,
+            IEnumerable<string> fields = null, string expand = "All");
+        Task<IEnumerable<ITfsWorkitem>> GetWorkitemsAsync(IEnumerable<int> ids,
+            IEnumerable<string> fields = null, string expand = "All", int batchSize = 50);
+
+        // Create Workitems
+        Task<ITfsWorkitem> CreateWorkitemAsync(string itemType, IReadOnlyDictionary<string, string> itemFields = null,
+            string expand = "All", bool bypassRules = false,
+            bool suppressNotifications = false, bool validateOnly = false);
+        Task<ITfsWorkitem> CreateWorkitemAsync(WorkItemType itemType, IReadOnlyDictionary<string, string> itemFields = null);
+
+        Task<ITfsWorkitem> CopyWorkitemAsync(int sourceItemId, IReadOnlyDictionary<string, string> destinationItemFields = null);
+        Task<ITfsWorkitem> CopyWorkitemAsync(ITfsWorkitem sourceItem, IReadOnlyDictionary<string, string> destinationItemFields = null);
+
+        Task<ITfsWorkitem> UpdateWorkitemFieldsAsync(int workitemId, IReadOnlyDictionary<string, string> itemFields,
+            string expand = "All", bool bypassRules = false,
+            bool suppressNotifications = false, bool validateOnly = false);
+
+        Task<ITfsWorkitem> AddRelationLinkAsync(
+            int sourceWorkitemId, int destinationWorkitemId,
+            string relationType, IReadOnlyDictionary<string, string> relationAttributes = null,
+            string expand = "All", bool bypassRules = false,
+            bool suppressNotifications = false, bool validateOnly = false);
+        Task<ITfsWorkitem> AddRelationLinkAsync(
+            int sourceWorkitemId, int destinationWorkitemId,
+            WorkitemRelationType relationType, IReadOnlyDictionary<string, string> relationAttributes = null);
+
+        Task<ITfsWorkitem> RemoveRelationLinkAsync(
+            int workitemId, int relationId,
+            string expand = "All", bool bypassRules = false,
+            bool suppressNotifications = false, bool validateOnly = false);
+    }
 }

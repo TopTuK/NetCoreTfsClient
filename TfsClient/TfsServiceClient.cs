@@ -50,8 +50,10 @@ namespace TfsClient
             return new TfsServiceClient(httpService, serverUrl, projectName);
         }
 
-        public static ITfsServiceClientWorkitemFacade GetTfsWorkitemService(this ITfsServiceClient tfsServiceClient) =>
+        public static ITfsServiceClientWorkitemFacade GetTfsWorkitemServiceFacade(this ITfsServiceClient tfsServiceClient) =>
             new TfsServiceClientWorkitemFacade(tfsServiceClient);
+        public static IAsyncTfsServiceClientWorkitemFacade GetTfsWorkitemServiceAsyncFacade(this ITfsServiceClient tfsServiceClient) =>
+            new AsyncTfsServiceClientWorkitemFacade(tfsServiceClient);
     }
 
     internal class TfsServiceClient : ITfsServiceClient
