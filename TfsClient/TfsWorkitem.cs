@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace TfsClient
 {
@@ -202,6 +203,29 @@ namespace TfsClient
                 }
             }
 
+            public async Task<UpdateFieldsResult> UpdateFieldsAsync()
+            {
+                if (_updatedFields.Count == 0)
+                {
+                    return UpdateFieldsResult.UPDATE_EMPTY;
+                }
+
+                try
+                {
+                    var item = await _tfsServiceClient.UpdateWorkitemFieldsAsync(Id, _updatedFields, expand: "fields") as TfsWorkitem;
+                    if (item == null) return UpdateFieldsResult.UPDATE_FAIL;
+
+                    _updatedFields.Clear();
+                    _fields = item._fields;
+
+                    return UpdateFieldsResult.UPDATE_SUCCESS;
+                }
+                catch
+                {
+                    return UpdateFieldsResult.UPDATE_FAIL;
+                }
+            }
+
             public UpdateRelationsResult AddRelationLink(
                 int destinationWorkitemId, WorkitemRelationType relationType,
                 IReadOnlyDictionary<string, string> relationAttributes = null)
@@ -209,6 +233,26 @@ namespace TfsClient
                 try
                 {
                     var item = _tfsServiceClient.AddRelationLink(Id, destinationWorkitemId, 
+                        relationType, relationAttributes) as TfsWorkitem;
+                    if (item == null) return UpdateRelationsResult.UPDATE_FAIL;
+
+                    _relations = item._relations;
+
+                    return UpdateRelationsResult.UPDATE_SUCCESS;
+                }
+                catch
+                {
+                    return UpdateRelationsResult.UPDATE_FAIL;
+                }
+            }
+
+            public async Task<UpdateRelationsResult> AddRelationLinkAsync(
+                int destinationWorkitemId, WorkitemRelationType relationType,
+                IReadOnlyDictionary<string, string> relationAttributes = null)
+            {
+                try
+                {
+                    var item = await _tfsServiceClient.AddRelationLinkAsync(Id, destinationWorkitemId,
                         relationType, relationAttributes) as TfsWorkitem;
                     if (item == null) return UpdateRelationsResult.UPDATE_FAIL;
 
@@ -243,6 +287,27 @@ namespace TfsClient
                 }
             }
 
+            public async Task<UpdateRelationsResult> RemoveRelationLinksAsync(int destinationWorkitemId)
+            {
+                var relIdx = _relations.FindIndex(relation => relation.WorkitemId == destinationWorkitemId);
+
+                if (relIdx < 0) return UpdateRelationsResult.UPDATE_FAIL;
+
+                try
+                {
+                    var item = await _tfsServiceClient.RemoveRelationLinkAsync(Id, relIdx, expand: "relations") as TfsWorkitem;
+                    if (item == null) return UpdateRelationsResult.UPDATE_FAIL;
+
+                    _relations = item._relations;
+
+                    return UpdateRelationsResult.UPDATE_SUCCESS;
+                }
+                catch
+                {
+                    return UpdateRelationsResult.UPDATE_FAIL;
+                }
+            }
+
             public IEnumerable<ITfsWorkitemRelation> GetWorkitemRelations(WorkitemRelationType relationType)
             {
                 return _relations
@@ -262,6 +327,17 @@ namespace TfsClient
                 return GetRelatedWorkitems(relationTypeName);
             }
 
+            public async Task<IEnumerable<ITfsWorkitem>> GetRelatedWorkitemsAsync(WorkitemRelationType relationType)
+            {
+                if (relationType == WorkitemRelationType.Unknown)
+                {
+                    throw new ArgumentException("Relation type can't be unknown", "relationType");
+                }
+
+                var relationTypeName = RELATION_TYPE_MAP[relationType];
+                return await GetRelatedWorkitemsAsync(relationTypeName);
+            }
+
             public IEnumerable<ITfsWorkitem> GetRelatedWorkitems(string relationTypeName)
             {
                 var relatedIds = _relations
@@ -271,6 +347,17 @@ namespace TfsClient
                 if (relatedIds.Count == 0) return Enumerable.Empty<ITfsWorkitem>();
 
                 return _tfsServiceClient.GetWorkitems(relatedIds);
+            }
+
+            public async Task<IEnumerable<ITfsWorkitem>> GetRelatedWorkitemsAsync(string relationTypeName)
+            {
+                var relatedIds = _relations
+                    .Where(rel => rel.RelationTypeName == relationTypeName)
+                    .Select(rel => rel.WorkitemId)
+                    .ToList();
+                if (relatedIds.Count == 0) return Enumerable.Empty<ITfsWorkitem>();
+
+                return await _tfsServiceClient.GetWorkitemsAsync(relatedIds);
             }
         }
 

@@ -4,6 +4,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace TfsClient
 {
@@ -42,6 +43,13 @@ namespace TfsClient
                 if (IsEmpty) return null;
 
                 return _tfsServiceClient.GetWorkitems(_itemIds);
+            }
+
+            public async Task<IEnumerable<ITfsWorkitem>> GetWorkitemsAsync()
+            {
+                if (IsEmpty) return null;
+
+                return await _tfsServiceClient.GetWorkitemsAsync(_itemIds);
             }
         }
 

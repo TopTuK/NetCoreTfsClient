@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace TfsClient
 {
@@ -55,14 +56,21 @@ namespace TfsClient
         IReadOnlyCollection<string> FieldNames { get; }
         string this[string fieldName] { get; set; }
         UpdateFieldsResult UpdateFields();
+        Task<UpdateFieldsResult> UpdateFieldsAsync();
 
         IReadOnlyList<ITfsWorkitemRelation> Relations { get; }
         UpdateRelationsResult AddRelationLink(int destinationWorkitemId, WorkitemRelationType relationType,
             IReadOnlyDictionary<string, string> relationAttributes = null);
+        Task<UpdateRelationsResult> AddRelationLinkAsync(
+                int destinationWorkitemId, WorkitemRelationType relationType,
+                IReadOnlyDictionary<string, string> relationAttributes = null);
         UpdateRelationsResult RemoveRelationLinks(int destinationWorkitemId);
+        Task<UpdateRelationsResult> RemoveRelationLinksAsync(int destinationWorkitemId);
         IEnumerable<ITfsWorkitemRelation> GetWorkitemRelations(WorkitemRelationType relationType);
 
         IEnumerable<ITfsWorkitem> GetRelatedWorkitems(WorkitemRelationType relationType);
+        Task<IEnumerable<ITfsWorkitem>> GetRelatedWorkitemsAsync(WorkitemRelationType relationType);
         IEnumerable<ITfsWorkitem> GetRelatedWorkitems(string relationTypeName);
+        Task<IEnumerable<ITfsWorkitem>> GetRelatedWorkitemsAsync(string relationTypeName);
     }
 }
