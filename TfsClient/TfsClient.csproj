@@ -2,6 +2,11 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
+    <PackageId>netCoreTfsClient</PackageId>
+    <Version>0.1.0</Version>
+    <Authors>TopTuK</Authors>
+    <Company>SmartAgency</Company>
+    <Description />
   </PropertyGroup>
 
   <ItemGroup>

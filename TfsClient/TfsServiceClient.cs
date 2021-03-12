@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 using TfsClient.HttpService;
 using TfsClient.Utils;
 
@@ -130,6 +131,18 @@ namespace TfsClient
                 { "validateOnly", $"{validateOnly}" }
             };
 
+        private IEnumerable<ITfsWorkitem> GetTfsItemsFromResponse(IHttpResponse response)
+        {
+            if ((response != null) && (response.IsSuccess))
+            {
+                var items = TfsWorkitemFactory.FromJsonItems(this, response.Content);
+
+                return items;
+            }
+
+            return null;
+        }
+
         private IEnumerable<ITfsWorkitem> GetTfsItems(string requestUrl,
             IReadOnlyDictionary<string, string> requestParams = null,
             bool underProject = false)
@@ -139,15 +152,19 @@ namespace TfsClient
                 : (_tfsUrl + requestUrl);
 
             var response = _httpService.Get(url, requestParams);
+            return GetTfsItemsFromResponse(response);
+        }
 
-            if((response != null) && (response.IsSuccess))
-            {
-                var items = TfsWorkitemFactory.FromJsonItems(this, response.Content);
-                
-                return items;
-            }
+        private async Task<IEnumerable<ITfsWorkitem>> GetTfsItemsAsync(string requestUrl,
+            IReadOnlyDictionary<string, string> requestParams = null,
+            bool underProject = false)
+        {
+            var url = underProject
+                ? (_tfsUrlPrj + requestUrl)
+                : (_tfsUrl + requestUrl);
 
-            return null;
+            var response = await _httpService.GetAsync(url, requestParams);
+            return GetTfsItemsFromResponse(response);
         }
 
         public ITfsWorkitem GetSingleWorkitem(int id, IEnumerable<string> fields = null, string expand = "All")
@@ -161,8 +178,18 @@ namespace TfsClient
             return items?.FirstOrDefault();
         }
 
-        public IEnumerable<ITfsWorkitem> GetWorkitems(IEnumerable<int> ids,
-            IEnumerable<string> fields = null, string expand = "All", int batchSize = 50)
+        public async Task<ITfsWorkitem> GetSingleWorkitemAsync(int id, IEnumerable<string> fields = null, string expand = "All")
+        {
+            int[] ids = new int[]
+            {
+                id
+            };
+            var items = await GetWorkitemsAsync(ids, fields, expand);
+
+            return items?.FirstOrDefault();
+        }
+
+        private Dictionary<string, string> GetWorkitemsPrepareArgs(IEnumerable<string> fields, string expand)
         {
             var defaultRequestParams = new Dictionary<string, string>
             {
@@ -175,6 +202,14 @@ namespace TfsClient
                 var flds = string.Join(",", fields);
                 defaultRequestParams.Add("fields", flds);
             }
+
+            return defaultRequestParams;
+        }
+
+        public IEnumerable<ITfsWorkitem> GetWorkitems(IEnumerable<int> ids,
+            IEnumerable<string> fields = null, string expand = "All", int batchSize = 50)
+        {
+            var defaultRequestParams = GetWorkitemsPrepareArgs(fields, expand);
 
             List<ITfsWorkitem> resultItems = new List<ITfsWorkitem>(ids.Count());
             foreach (var items in ids.Batch(batchSize))
@@ -198,6 +233,60 @@ namespace TfsClient
             return resultItems;
         }
 
+        public async Task<IEnumerable<ITfsWorkitem>> GetWorkitemsAsync(IEnumerable<int> ids,
+            IEnumerable<string> fields = null, string expand = "All", int batchSize = 50)
+        {
+            var defaultRequestParams = GetWorkitemsPrepareArgs(fields, expand);
+
+            List<ITfsWorkitem> resultItems = new List<ITfsWorkitem>(ids.Count());
+            foreach (var items in ids.Batch(batchSize))
+            {
+                var requestParams = new Dictionary<string, string>(defaultRequestParams)
+                {
+                    { "ids", string.Join(",", items) }
+                };
+
+                try
+                {
+                    var tfsItems = await GetTfsItemsAsync(WORKITEM_URL, requestParams);
+                    resultItems.AddRange(tfsItems);
+                }
+                catch (Exception ex)
+                {
+                    throw ex;
+                }
+            }
+
+            return resultItems;
+        }
+
+        private (string, Dictionary<string, string>, object, Dictionary<string, string>) CreateWorkitemPrepareArgs(
+            string itemType, IReadOnlyDictionary<string, string> itemFields,
+            string expand, bool bypassRules,
+            bool suppressNotifications, bool validateOnly)
+        {
+            var requestUrl = $"{_tfsUrlPrj}/{WORKITEM_URL}/${itemType}";
+
+            var queryParams = MakeQueryParams(expand, bypassRules, suppressNotifications, validateOnly);
+
+            // Media Types: "application/json-patch+json"
+            var requestBody = itemFields
+                .Select(fld => new {
+                    op = "add",
+                    path = $"/fields/{fld.Key}",
+                    @from = (string)null,
+                    value = fld.Value
+                })
+                .ToList();
+
+            var customHeaders = new Dictionary<string, string>()
+            {
+                { "Content-Type", "application/json-patch+json" }
+            };
+
+            return (requestUrl, queryParams, requestBody, customHeaders);
+        }
+
         // https://docs.microsoft.com/en-us/rest/api/azure/devops/wit/work%20items/create?view=azure-devops-rest-6.0
         public ITfsWorkitem CreateWorkitem(string itemType, IReadOnlyDictionary<string, string> itemFields = null,
             string expand = "All", bool bypassRules = false,
@@ -208,24 +297,9 @@ namespace TfsClient
                 throw new ArgumentNullException("itemType", "type can not be null");
             }
 
-            var requestUrl = $"{_tfsUrlPrj}/{WORKITEM_URL}/${itemType}";
-
-            var queryParams = MakeQueryParams(expand, bypassRules, suppressNotifications, validateOnly);
-
-            // Media Types: "application/json-patch+json"
-            var requestBody = itemFields
-                .Select(fld => new {
-                    op = "add",
-                    path = $"/fields/{fld.Key}",
-                    @from = (string) null,
-                    value = fld.Value
-                })
-                .ToList();
-
-            var customHeaders = new Dictionary<string, string>()
-            {
-                { "Content-Type", "application/json-patch+json" }
-            };
+            (var requestUrl, var queryParams, var requestBody, var customHeaders) = CreateWorkitemPrepareArgs(
+                itemType, itemFields, expand, bypassRules, suppressNotifications, validateOnly
+            );
 
             try
             {
@@ -242,6 +316,34 @@ namespace TfsClient
             }
         }
 
+        public async Task<ITfsWorkitem> CreateWorkitemAsync(string itemType, IReadOnlyDictionary<string, string> itemFields = null,
+            string expand = "All", bool bypassRules = false,
+            bool suppressNotifications = false, bool validateOnly = false)
+        {
+            if (itemType == null)
+            {
+                throw new ArgumentNullException("itemType", "type can not be null");
+            }
+
+            (var requestUrl, var queryParams, var requestBody, var customHeaders) = CreateWorkitemPrepareArgs(
+                itemType, itemFields, expand, bypassRules, suppressNotifications, validateOnly
+            );
+
+            try
+            {
+                var response = await _httpService.PostJsonAsync(requestUrl, requestBody,
+                    customParams: queryParams, customHeaders: customHeaders);
+
+                return response.IsSuccess
+                    ? TfsWorkitemFactory.FromJsonItem(this, response.Content)
+                    : null;
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+
         public ITfsWorkitem CreateWorkitem(WorkItemType itemType, IReadOnlyDictionary<string, string> itemFields = null)
         {
             if(itemType == WorkItemType.Unknown)
@@ -250,6 +352,17 @@ namespace TfsClient
             }
 
             return CreateWorkitem(TfsWorkitemFactory.WI_TYPE_MAP[itemType], itemFields);
+        }
+
+        public async Task<ITfsWorkitem> CreateWorkitemAsync(
+            WorkItemType itemType, IReadOnlyDictionary<string, string> itemFields = null)
+        {
+            if (itemType == WorkItemType.Unknown)
+            {
+                throw new ArgumentException("Type can't be unknown", "itemType");
+            }
+
+            return await CreateWorkitemAsync(TfsWorkitemFactory.WI_TYPE_MAP[itemType], itemFields);
         }
 
         public ITfsWorkitem CopyWorkitem(int sourceItemId, IReadOnlyDictionary<string, string> destinationItemFields = null)
@@ -261,14 +374,19 @@ namespace TfsClient
                 : null;
         }
 
-        public ITfsWorkitem CopyWorkitem(ITfsWorkitem sourceItem, 
+        public async Task<ITfsWorkitem> CopyWorkitemAsync(int sourceItemId, 
             IReadOnlyDictionary<string, string> destinationItemFields = null)
         {
-            if(sourceItem == null)
-            {
-                throw new ArgumentException("Source item can't be null", "sourceItem");
-            }
+            var sourceItem = await GetSingleWorkitemAsync(sourceItemId);
 
+            return (sourceItem != null)
+                ? await CopyWorkitemAsync(sourceItem, destinationItemFields)
+                : null;
+        }
+
+        private IReadOnlyDictionary<string, string> CopyWorkitemPrepareArgs(ITfsWorkitem sourceItem, 
+            IReadOnlyDictionary<string, string> destinationItemFields)
+        {
             var ignoreFields = new List<string>
             {
                 "System.TeamProject",
@@ -296,16 +414,15 @@ namespace TfsClient
                 "System.Watermark"
             };
 
-            var itemTypeName = sourceItem.ItemTypeName;
             var sourceItemFields = sourceItem.FieldNames;
 
             var fields = new Dictionary<string, string>(sourceItemFields.Count);
-            foreach(var fldName in sourceItemFields)
+            foreach (var fldName in sourceItemFields)
             {
                 if (ignoreFields.Contains(fldName)) continue;
 
                 string fldValue = sourceItem[fldName];
-                if((destinationItemFields != null) && (destinationItemFields.ContainsKey(fldName)))
+                if ((destinationItemFields != null) && (destinationItemFields.ContainsKey(fldName)))
                 {
                     fldValue = destinationItemFields[fldName];
                 }
@@ -313,9 +430,60 @@ namespace TfsClient
                 fields.Add(fldName, fldValue);
             }
 
-            return CreateWorkitem(itemTypeName, itemFields: fields);
+            return fields;
+        }
 
-            throw new NotImplementedException();
+        public ITfsWorkitem CopyWorkitem(ITfsWorkitem sourceItem, 
+            IReadOnlyDictionary<string, string> destinationItemFields = null)
+        {
+            if(sourceItem == null)
+            {
+                throw new ArgumentException("Source item can't be null", "sourceItem");
+            }
+
+            var itemTypeName = sourceItem.ItemTypeName;
+            var fields = CopyWorkitemPrepareArgs(sourceItem, destinationItemFields);
+
+            return CreateWorkitem(itemTypeName, itemFields: fields);
+        }
+
+        public async Task<ITfsWorkitem> CopyWorkitemAsync(ITfsWorkitem sourceItem,
+            IReadOnlyDictionary<string, string> destinationItemFields = null)
+        {
+            if (sourceItem == null)
+            {
+                throw new ArgumentException("Source item can't be null", "sourceItem");
+            }
+
+            var itemTypeName = sourceItem.ItemTypeName;
+            var fields = CopyWorkitemPrepareArgs(sourceItem, destinationItemFields);
+
+            return await CreateWorkitemAsync(itemTypeName, itemFields: fields);
+        }
+
+        private (string, object, IReadOnlyDictionary<string, string>, IReadOnlyDictionary<string, string>)
+            UpdateWorkitemFieldsPrepareAgrs(int workitemId, IReadOnlyDictionary<string, string> itemFields,
+                string expand, bool bypassRules,
+                bool suppressNotifications, bool validateOnly)
+        {
+            var requestUrl = $"{_tfsUrlPrj}/{WORKITEM_URL}/{workitemId}";
+
+            var requestBody = itemFields
+                .Select(fld => new {
+                    op = "add",
+                    path = $"/fields/{fld.Key}",
+                    value = fld.Value
+                })
+                .ToList();
+
+            var queryParams = MakeQueryParams(expand, bypassRules, suppressNotifications, validateOnly);
+
+            var customHeaders = new Dictionary<string, string>()
+            {
+                { "Content-Type", "application/json-patch+json" }
+            };
+
+            return (requestUrl, requestBody, queryParams, customHeaders);
         }
 
         // https://docs.microsoft.com/en-us/rest/api/azure/devops/wit/work%20items/update?view=azure-devops-rest-6.0
@@ -328,22 +496,8 @@ namespace TfsClient
                 throw new ArgumentNullException("itemFields");
             }
 
-            var requestBody = itemFields
-                .Select(fld => new { 
-                    op = "add",
-                    path = $"/fields/{fld.Key}",
-                    value = fld.Value
-                })
-                .ToList();
-
-            var requestUrl = $"{_tfsUrlPrj}/{WORKITEM_URL}/{workitemId}";
-
-            var queryParams = MakeQueryParams(expand, bypassRules, suppressNotifications, validateOnly);
-
-            var customHeaders = new Dictionary<string, string>()
-            {
-                { "Content-Type", "application/json-patch+json" }
-            };
+            (var requestUrl, var requestBody, var queryParams, var customHeaders) = UpdateWorkitemFieldsPrepareAgrs(
+                workitemId, itemFields, expand, bypassRules, suppressNotifications, validateOnly);
 
             try
             {
@@ -360,24 +514,45 @@ namespace TfsClient
             }
         }
 
-        // https://docs.microsoft.com/en-us/rest/api/azure/devops/wit/work%20items/update?view=azure-devops-rest-6.0#add-a-link
-        public ITfsWorkitem AddRelationLink(
-            int sourceWorkitemId, int destinationWorkitemId, 
-            string relationType, IReadOnlyDictionary<string, string> relationAttributes = null,
+        public async Task<ITfsWorkitem> UpdateWorkitemFieldsAsync(int workitemId, IReadOnlyDictionary<string, string> itemFields,
             string expand = "All", bool bypassRules = false,
             bool suppressNotifications = false, bool validateOnly = false)
         {
-            if((relationType == null) || (relationType.Trim() == ""))
+            if (itemFields == null)
             {
-                throw new ArgumentNullException("relationType", "parametr is null or empty");
+                throw new ArgumentNullException("itemFields");
             }
 
+            (var requestUrl, var requestBody, var queryParams, var customHeaders) = UpdateWorkitemFieldsPrepareAgrs(
+                workitemId, itemFields, expand, bypassRules, suppressNotifications, validateOnly);
+
+            try
+            {
+                var response = await _httpService.PatchJsonAsync(requestUrl, requestBody,
+                    customParams: queryParams, customHeaders: customHeaders);
+
+                return response.IsSuccess
+                    ? TfsWorkitemFactory.FromJsonItem(this, response.Content)
+                    : null;
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+
+        private (string, IReadOnlyDictionary<string, string>, object, IReadOnlyDictionary<string, string>)
+            AddRelationLinkPrepareArgs(int sourceWorkitemId, int destinationWorkitemId,
+            string relationType, IReadOnlyDictionary<string, string> relationAttributes,
+            string expand, bool bypassRules,
+            bool suppressNotifications, bool validateOnly)
+        {
             var requestUrl = $"{_tfsUrlPrj}{WORKITEM_URL}/{sourceWorkitemId}";
 
             var queryParams = MakeQueryParams(expand, bypassRules, suppressNotifications, validateOnly);
 
             var requestBody = new[]
-            { 
+            {
                 new
                 {
                     op = "add",
@@ -396,9 +571,58 @@ namespace TfsClient
                 { "Content-Type", "application/json-patch+json" }
             };
 
+            return (requestUrl, queryParams, requestBody, customHeaders);
+        }
+
+        // https://docs.microsoft.com/en-us/rest/api/azure/devops/wit/work%20items/update?view=azure-devops-rest-6.0#add-a-link
+        public ITfsWorkitem AddRelationLink(
+            int sourceWorkitemId, int destinationWorkitemId, 
+            string relationType, IReadOnlyDictionary<string, string> relationAttributes = null,
+            string expand = "All", bool bypassRules = false,
+            bool suppressNotifications = false, bool validateOnly = false)
+        {
+            if((relationType == null) || (relationType.Trim() == ""))
+            {
+                throw new ArgumentNullException("relationType", "parametr is null or empty");
+            }
+
+            (var requestUrl, var queryParams, var requestBody, var customHeaders) = AddRelationLinkPrepareArgs(
+                sourceWorkitemId, destinationWorkitemId, relationType, relationAttributes,
+                expand, bypassRules, suppressNotifications, validateOnly);
+
             try
             {
                 var response = _httpService.PatchJson(requestUrl, requestBody, 
+                    customParams: queryParams, customHeaders: customHeaders);
+
+                return response.IsSuccess
+                    ? TfsWorkitemFactory.FromJsonItem(this, response.Content)
+                    : null;
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+
+        public async Task<ITfsWorkitem> AddRelationLinkAsync(
+            int sourceWorkitemId, int destinationWorkitemId,
+            string relationType, IReadOnlyDictionary<string, string> relationAttributes = null,
+            string expand = "All", bool bypassRules = false,
+            bool suppressNotifications = false, bool validateOnly = false)
+        {
+            if ((relationType == null) || (relationType.Trim() == ""))
+            {
+                throw new ArgumentNullException("relationType", "parametr is null or empty");
+            }
+
+            (var requestUrl, var queryParams, var requestBody, var customHeaders) = AddRelationLinkPrepareArgs(
+                sourceWorkitemId, destinationWorkitemId, relationType, relationAttributes,
+                expand, bypassRules, suppressNotifications, validateOnly);
+
+            try
+            {
+                var response = await _httpService.PatchJsonAsync(requestUrl, requestBody,
                     customParams: queryParams, customHeaders: customHeaders);
 
                 return response.IsSuccess
@@ -423,11 +647,22 @@ namespace TfsClient
             return AddRelationLink(sourceWorkitemId, destinationWorkitemId, relTypeName, relationAttributes);
         }
 
-        public ITfsWorkitem RemoveRelationLink(
-            int workitemId, int relationId,
-            string expand = "All", bool bypassRules = false,
-            bool suppressNotifications = false, bool validateOnly = false
-            )
+        public async Task<ITfsWorkitem> AddRelationLinkAsync(
+            int sourceWorkitemId, int destinationWorkitemId,
+            WorkitemRelationType relationType, IReadOnlyDictionary<string, string> relationAttributes = null)
+        {
+            if (!TfsWorkitemFactory.RELATION_TYPE_MAP.TryGetValue(relationType, out string relTypeName))
+            {
+                throw new ArgumentException("relationType must not be unknown", "relationType");
+            }
+
+            return await AddRelationLinkAsync(sourceWorkitemId, destinationWorkitemId, relTypeName, relationAttributes);
+        }
+
+        private (string, IReadOnlyDictionary<string, string>, object, IReadOnlyDictionary<string, string>)
+            RemoveRelationLinkPrepareArgs(int workitemId, int relationId,
+            string expand, bool bypassRules,
+            bool suppressNotifications, bool validateOnly)
         {
             var requestUrl = $"{_tfsUrlPrj}{WORKITEM_URL}/{workitemId}";
             var queryParams = MakeQueryParams(expand, bypassRules, suppressNotifications, validateOnly);
@@ -446,6 +681,17 @@ namespace TfsClient
                 { "Content-Type", "application/json-patch+json" }
             };
 
+            return (requestUrl, queryParams, requestBody, customHeaders);
+        }
+
+        public ITfsWorkitem RemoveRelationLink(
+            int workitemId, int relationId,
+            string expand = "All", bool bypassRules = false,
+            bool suppressNotifications = false, bool validateOnly = false)
+        {
+            (var requestUrl, var queryParams, var requestBody, var customHeaders) = RemoveRelationLinkPrepareArgs(
+                workitemId, relationId, expand, bypassRules, suppressNotifications, validateOnly);
+
             try
             {
                 var response = _httpService.PatchJson(requestUrl, requestBody, 
@@ -461,12 +707,32 @@ namespace TfsClient
             }
         }
 
-        public ITfsWiqlResult RunSavedQuery(string queryId)
+        public async Task<ITfsWorkitem> RemoveRelationLinkAsync(
+            int workitemId, int relationId,
+            string expand = "All", bool bypassRules = false,
+            bool suppressNotifications = false, bool validateOnly = false)
         {
-            if (queryId == null)
+            (var requestUrl, var queryParams, var requestBody, var customHeaders) = RemoveRelationLinkPrepareArgs(
+                workitemId, relationId, expand, bypassRules, suppressNotifications, validateOnly);
+
+            try
             {
-                throw new ArgumentException("param can't be null", "queryId");
+                var response = await _httpService.PatchJsonAsync(requestUrl, requestBody,
+                    customParams: queryParams, customHeaders: customHeaders);
+
+                return response.IsSuccess
+                    ? TfsWorkitemFactory.FromJsonItem(this, response.Content)
+                    : null;
             }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+
+        private (string, IReadOnlyDictionary<string, string>) RunSavedQueryPrepareArgs(string queryId)
+        {
+            var requestUrl = $"{_tfsUrlPrj}{QUERY_URL}/{queryId}";
 
             var queryParams = new Dictionary<string, string>()
             {
@@ -474,7 +740,18 @@ namespace TfsClient
                 { "$expand", "clauses" }
             };
 
-            var requestUrl = $"{_tfsUrlPrj}{QUERY_URL}/{queryId}";
+            return (requestUrl, queryParams);
+        }
+
+        public ITfsWiqlResult RunSavedQuery(string queryId)
+        {
+            if (queryId == null)
+            {
+                throw new ArgumentException("param can't be null", "queryId");
+            }
+
+            (var requestUrl, var queryParams) = RunSavedQueryPrepareArgs(queryId);
+
             try
             {
                 var response = _httpService.Get(requestUrl, queryParams);
@@ -489,12 +766,32 @@ namespace TfsClient
             }
         }
 
-        public ITfsWiqlResult RunWiql(string query, int maxTop = -1)
+        public async Task<ITfsWiqlResult> RunSavedQueryAsync(string queryId)
         {
-            if(query == null)
+            if (queryId == null)
             {
-                throw new ArgumentException("param can't be null", "query");
+                throw new ArgumentException("param can't be null", "queryId");
             }
+
+            (var requestUrl, var queryParams) = RunSavedQueryPrepareArgs(queryId);
+
+            try
+            {
+                var response = await _httpService.GetAsync(requestUrl, queryParams);
+
+                return response.IsSuccess
+                    ? TfsWiqlFactory.FromQueryResponse(this, response.Content)
+                    : null;
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+
+        private (string, object, IReadOnlyDictionary<string, string>) RunWiqlPrepareArgs(string query, int maxTop)
+        {
+            var requestUrl = $"{_tfsUrlPrj}{WIQL_URL}";
 
             var requestBody = new
             {
@@ -506,16 +803,49 @@ namespace TfsClient
                 { "api-version", API_VERSION }
             };
 
-            if(maxTop > 0)
+            if (maxTop > 0)
             {
                 queryParams.Add("$top", maxTop.ToString());
             }
 
-            var requestUrl = $"{_tfsUrlPrj}{WIQL_URL}";
+            return (requestUrl, requestBody, queryParams);
+        }
+
+        public ITfsWiqlResult RunWiql(string query, int maxTop = -1)
+        {
+            if(query == null)
+            {
+                throw new ArgumentException("param can't be null", "query");
+            }
+
+            (var requestUrl, var requestBody, var queryParams) = RunWiqlPrepareArgs(query, maxTop);
 
             try
             {
                 var response = _httpService.PostJson(requestUrl, requestBody, customParams: queryParams);
+
+                return response.IsSuccess
+                    ? TfsWiqlFactory.FromContentResponse(this, response.Content)
+                    : null;
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+
+        public async Task<ITfsWiqlResult> RunWiqlAsync(string query, int maxTop = -1)
+        {
+            if (query == null)
+            {
+                throw new ArgumentException("param can't be null", "query");
+            }
+
+            (var requestUrl, var requestBody, var queryParams) = RunWiqlPrepareArgs(query, maxTop);
+
+            try
+            {
+                var response = await _httpService.PostJsonAsync(requestUrl, requestBody, customParams: queryParams);
 
                 return response.IsSuccess
                     ? TfsWiqlFactory.FromContentResponse(this, response.Content)
