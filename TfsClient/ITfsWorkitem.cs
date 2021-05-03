@@ -51,7 +51,12 @@ namespace TfsClient
         WorkItemType ItemType { get; }
         string ItemTypeName { get; }
         string Url { get; }
+
         int Id { get; }
+        string Title { get; }
+        string State { get; }
+        string Reason { get; }
+        string AssignedTo { get; }
 
         IReadOnlyCollection<string> FieldNames { get; }
         string this[string fieldName] { get; set; }

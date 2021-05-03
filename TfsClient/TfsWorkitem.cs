@@ -105,6 +105,82 @@ namespace TfsClient
 
             public IReadOnlyCollection<string> FieldNames => _fields.Keys;
 
+            public string Title
+            {
+                get
+                {
+                    if (_updatedFields.ContainsKey("System.Title"))
+                    {
+                        return _updatedFields["System.Title"];
+                    }
+
+                    if (_fields.TryGetValue("System.Title", out var fldValue))
+                    {
+                        return fldValue.ToString();
+                    }
+
+                    return null;
+                }
+            }
+
+            public string State
+            {
+                get
+                {
+                    if (_updatedFields.ContainsKey("System.State"))
+                    {
+                        return _updatedFields["System.State"];
+                    }
+
+                    if (_fields.TryGetValue("System.State", out var fldValue))
+                    {
+                        return fldValue.ToString();
+                    }
+
+                    return null;
+                }
+            }
+
+            public string Reason
+            {
+                get
+                {
+                    if (_updatedFields.ContainsKey("System.Reason"))
+                    {
+                        return _updatedFields["System.Reason"];
+                    }
+
+                    if (_fields.TryGetValue("System.Reason", out var fldValue))
+                    {
+                        return fldValue.ToString();
+                    }
+
+                    return null;
+                }
+            }
+
+            public string AssignedTo
+            {
+                get
+                {
+                    if (_updatedFields.ContainsKey("System.AssignedTo"))
+                    {
+                        return _updatedFields["System.AssignedTo"];
+                    }
+
+                    if (_fields.TryGetValue("System.AssignedTo", out var fldValue))
+                    {
+                        if (fldValue.Type == JTokenType.String) return fldValue.ToObject<string>();
+
+                        return (fldValue["displayName"] != null) 
+                            ? fldValue["displayName"].ToObject<string>() 
+                            : fldValue.ToString();
+                    }
+
+                    return null;
+                }
+            }
+
             public string this[string fieldName] 
             {
                 get
@@ -116,8 +192,10 @@ namespace TfsClient
 
                     if (_fields.TryGetValue(fieldName, out JToken jField))
                     {
-                        return jField.Type == JTokenType.String
-                            ? jField.ToObject<string>()
+                        if (jField.Type == JTokenType.String) return jField.ToObject<string>();
+
+                        return (jField["displayName"] != null)
+                            ? jField["displayName"].ToObject<string>()
                             : jField.ToString();
                     }
 

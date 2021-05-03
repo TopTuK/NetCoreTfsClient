@@ -34,7 +34,12 @@ namespace TfsClientApp
             var tfsService = TfsServiceClientFactory.CreateTfsServiceClient(tfsServerUrl, tfsCollection,
                 personalAccessToken);
 
-            DisplayWiqlQueryByIdResult(tfsService);
+            //DisplayWiqlQueryByIdResult(tfsService);
+            var item = tfsService.GetSingleWorkitem(1);
+            if (item != null)
+            {
+                Console.WriteLine($"{item.Id} {item["System.Title"]} {item["System.AssignedTo"]}");
+            }
 
             Console.WriteLine("Meow!");
         }
