@@ -188,7 +188,8 @@ namespace TfsClient.Tests.HttpServiceTests
             };
 
             // Act
-            var response = _httpService.Patch(_patchUrl, customParams: queryParams);
+            var response = _httpService.Patch(_patchUrl, 
+                queryParams: queryParams);
 
             // Assert
             Assert.NotNull(response);

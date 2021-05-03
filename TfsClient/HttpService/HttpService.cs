@@ -90,6 +90,7 @@ namespace TfsClient.HttpService
 
         private IRestRequest MakeRequest(string resource,
             IReadOnlyDictionary<string, string> customParams = null,
+            IReadOnlyDictionary<string, string> queryParams = null,
             IReadOnlyDictionary<string, string> customHeaders = null)
         {
             var request = new RestRequest(resource);
@@ -99,6 +100,14 @@ namespace TfsClient.HttpService
                 foreach (var param in customParams)
                 {
                     request.AddParameter(param.Key, param.Value);
+                }
+            }
+
+            if (queryParams != null)
+            {
+                foreach(var queryParam in queryParams)
+                {
+                    request.AddQueryParameter(queryParam.Key, queryParam.Value);
                 }
             }
 
@@ -114,20 +123,24 @@ namespace TfsClient.HttpService
         }
 
         public IHttpResponse Get(string resource, 
-            IReadOnlyDictionary<string, string> customParams = null,
+            IReadOnlyDictionary<string, string> queryParams = null,
             IReadOnlyDictionary<string, string> customHeaders = null)
         {
-            var request = MakeRequest(resource, customParams, customHeaders);
+            var request = MakeRequest(resource, 
+                queryParams: queryParams, 
+                customHeaders: customHeaders);
             var response = _restClient.Get(request);
 
             return new RestHttpResponse(response);
         }
 
         public async Task<IHttpResponse> GetAsync(string resource,
-            IReadOnlyDictionary<string, string> customParams = null,
+            IReadOnlyDictionary<string, string> queryParams = null,
             IReadOnlyDictionary<string, string> customHeaders = null)
         {
-            var request = MakeRequest(resource, customParams, customHeaders);
+            var request = MakeRequest(resource,
+                queryParams: queryParams,
+                customHeaders: customHeaders);
             request.Method = Method.GET;
             var response = await _restClient.ExecuteAsync(request);
 
@@ -135,20 +148,28 @@ namespace TfsClient.HttpService
         }
 
         public IHttpResponse Post(string resource,
-            IReadOnlyDictionary<string, string> customParams = null,
+            IReadOnlyDictionary<string, string> data = null,
+            IReadOnlyDictionary<string, string> queryParams = null,
             IReadOnlyDictionary<string, string> customHeaders = null)
         {
-            var request = MakeRequest(resource, customParams, customHeaders);
+            var request = MakeRequest(resource, 
+                customParams: data,
+                queryParams: queryParams,
+                customHeaders: customHeaders);
             var response = _restClient.Post(request);
 
             return new RestHttpResponse(response);
         }
 
         public async Task<IHttpResponse> PostAsync(string resource,
-            IReadOnlyDictionary<string, string> customParams = null,
+            IReadOnlyDictionary<string, string> data = null,
+            IReadOnlyDictionary<string, string> queryParams = null,
             IReadOnlyDictionary<string, string> customHeaders = null)
         {
-            var request = MakeRequest(resource, customParams, customHeaders);
+            var request = MakeRequest(resource,
+                customParams: data,
+                queryParams: queryParams,
+                customHeaders: customHeaders);
             request.Method = Method.POST;
             var response = await _restClient.ExecuteAsync(request);
 
@@ -157,18 +178,12 @@ namespace TfsClient.HttpService
 
         public IHttpResponse PostJson(string resource,
             object requestBody,
-            IReadOnlyDictionary<string, string> customParams = null,
+            IReadOnlyDictionary<string, string> queryParams = null,
             IReadOnlyDictionary<string, string> customHeaders = null)
         {
-            var request = MakeRequest(resource, customHeaders: customHeaders);
-
-            if (customParams != null)
-            {
-                foreach (var queryParam in customParams)
-                {
-                    request.AddQueryParameter(queryParam.Key, queryParam.Value);
-                }
-            }
+            var request = MakeRequest(resource,
+                queryParams: queryParams,
+                customHeaders: customHeaders);
 
             if((customHeaders != null) && (customHeaders.ContainsKey("Content-Type")))
             {
@@ -186,18 +201,12 @@ namespace TfsClient.HttpService
 
         public async Task<IHttpResponse> PostJsonAsync(string resource,
             object requestBody,
-            IReadOnlyDictionary<string, string> customParams = null,
+            IReadOnlyDictionary<string, string> queryParams = null,
             IReadOnlyDictionary<string, string> customHeaders = null)
         {
-            var request = MakeRequest(resource, customHeaders: customHeaders);
-
-            if (customParams != null)
-            {
-                foreach (var queryParam in customParams)
-                {
-                    request.AddQueryParameter(queryParam.Key, queryParam.Value);
-                }
-            }
+            var request = MakeRequest(resource, 
+                queryParams: queryParams,
+                customHeaders: customHeaders);
 
             request.Method = Method.POST;
 
@@ -216,20 +225,28 @@ namespace TfsClient.HttpService
         }
 
         public IHttpResponse Patch(string resource,
-            IReadOnlyDictionary<string, string> customParams = null,
+            IReadOnlyDictionary<string, string> data = null,
+            IReadOnlyDictionary<string, string> queryParams = null,
             IReadOnlyDictionary<string, string> customHeaders = null)
         {
-            var request = MakeRequest(resource, customParams, customHeaders);
+            var request = MakeRequest(resource,
+                customParams: data,
+                queryParams: queryParams,
+                customHeaders: customHeaders);
             var response = _restClient.Patch(request);
 
             return new RestHttpResponse(response);
         }
 
         public async Task<IHttpResponse> PatchAsync(string resource,
-            IReadOnlyDictionary<string, string> customParams = null,
+            IReadOnlyDictionary<string, string> data = null,
+            IReadOnlyDictionary<string, string> queryParams = null,
             IReadOnlyDictionary<string, string> customHeaders = null)
         {
-            var request = MakeRequest(resource, customParams, customHeaders);
+            var request = MakeRequest(resource,
+                customParams: data,
+                queryParams: queryParams,
+                customHeaders: customHeaders);
             request.Method = Method.PATCH;
             var response = await _restClient.ExecuteAsync(request);
 
@@ -238,18 +255,12 @@ namespace TfsClient.HttpService
 
         public IHttpResponse PatchJson(string resource,
             object requestBody,
-            IReadOnlyDictionary<string, string> customParams = null,
+            IReadOnlyDictionary<string, string> queryParams = null,
             IReadOnlyDictionary<string, string> customHeaders = null)
         {
-            var request = MakeRequest(resource, customHeaders: customHeaders);
-
-            if (customParams != null)
-            {
-                foreach (var queryParam in customParams)
-                {
-                    request.AddQueryParameter(queryParam.Key, queryParam.Value);
-                }
-            }
+            var request = MakeRequest(resource,
+                queryParams: queryParams,
+                customHeaders: customHeaders);
 
             if ((customHeaders != null) && (customHeaders.ContainsKey("Content-Type")))
             {
@@ -267,18 +278,12 @@ namespace TfsClient.HttpService
 
         public async Task<IHttpResponse> PatchJsonAsync(string resource,
             object requestBody,
-            IReadOnlyDictionary<string, string> customParams = null,
+            IReadOnlyDictionary<string, string> queryParams = null,
             IReadOnlyDictionary<string, string> customHeaders = null)
         {
-            var request = MakeRequest(resource, customHeaders: customHeaders);
-
-            if (customParams != null)
-            {
-                foreach(var queryParam in customParams)
-                {
-                    request.AddQueryParameter(queryParam.Key, queryParam.Value);
-                }
-            }
+            var request = MakeRequest(resource,
+                queryParams: queryParams,
+                customHeaders: customHeaders);
 
             request.Method = Method.PATCH;
 

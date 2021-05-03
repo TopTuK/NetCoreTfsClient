@@ -8,15 +8,19 @@ using TfsClient.Utils;
 
 namespace TfsClient
 {
-    public enum TfsItemUpdateResult
-    {
-        FAIL_UPDATE = 0,
-        NOTHING_UPDATE,
-        SUCCESS_UPDATE
-    }
-
+    /// <summary>
+    /// Tfs Service Client Factory. Returns <see cref="ITfsServiceClient"/> interface implementation
+    /// </summary>
     public static class TfsServiceClientFactory
     {
+        /// <summary>
+        /// Get <see cref="ITfsServiceClient"/> interface and set authentification with NTLM
+        /// </summary>
+        /// <param name="serverUrl">Server url</param>
+        /// <param name="projectName">Project name with collection (ex.: DefaultCollection/MyProject)</param>
+        /// <param name="userName">User name (with domain prefix)</param>
+        /// <param name="userPassword">User password</param>
+        /// <returns><see cref="ITfsServiceClient"/> implementation</returns>
         public static ITfsServiceClient CreateTfsServiceClient(string serverUrl, string projectName,
             string userName = null, string userPassword = null)
         {
@@ -30,6 +34,13 @@ namespace TfsClient
             return tfsServiceClient;
         }
 
+        /// <summary>
+        /// Get <see cref="ITfsServiceClient"/> interface and set authentification with personal access token
+        /// </summary>
+        /// <param name="serverUrl">Server url</param>
+        /// <param name="projectName">Project name with collection (ex.: DefaultCollection/MyProject)</param>
+        /// <param name="personalAccessToken">Personal access token</param>
+        /// <returns><see cref="ITfsServiceClient"/> implementation</returns>
         public static ITfsServiceClient CreateTfsServiceClient(string serverUrl, string projectName,
             string personalAccessToken)
         {
@@ -44,14 +55,30 @@ namespace TfsClient
             return tfsServiceClient;
         }
 
+        /// <summary>
+        /// Create <see cref="ITfsServiceClient"/> implementation with custom <see cref="IHttpService"/> realization
+        /// </summary>
+        /// <param name="httpService">Custom realization of <see cref="IHttpService"/></param>
+        /// <param name="serverUrl">Server url</param>
+        /// <param name="projectName">Project name with collection (ex.: DefaultCollection/MyProject)</param>
+        /// <returns></returns>
         public static ITfsServiceClient CreateTfsServiceClient(IHttpService httpService, 
             string serverUrl, string projectName)
         {
             return new TfsServiceClient(httpService, serverUrl, projectName);
         }
 
+        /// <summary>
+        /// Extension method for get <see cref="ITfsServiceClientWorkitemFacade"/> facade
+        /// </summary>
+        /// <returns><see cref="ITfsServiceClientWorkitemFacade"/></returns>
         public static ITfsServiceClientWorkitemFacade GetTfsWorkitemServiceFacade(this ITfsServiceClient tfsServiceClient) =>
             new TfsServiceClientWorkitemFacade(tfsServiceClient);
+
+        /// <summary>
+        /// Extension method for get <see cref="IAsyncTfsServiceClientWorkitemFacade"/> facade
+        /// </summary>
+        /// <returns><see cref="IAsyncTfsServiceClientWorkitemFacade"/></returns>
         public static IAsyncTfsServiceClientWorkitemFacade GetTfsWorkitemServiceAsyncFacade(this ITfsServiceClient tfsServiceClient) =>
             new AsyncTfsServiceClientWorkitemFacade(tfsServiceClient);
     }
@@ -122,24 +149,11 @@ namespace TfsClient
             _httpService.Authentificate(personalAccessToken);
         }
 
-        private string GetWorkitemUrl(int workitemId) => $"{ServerUrl}{_tfsUrl}{WORKITEM_URL}/{workitemId}";
-        private Dictionary<string, string> MakeQueryParams(string expand, bool bypassRules,
-            bool suppressNotifications, bool validateOnly) => new Dictionary<string, string>()
-            {
-                { "api-version", API_VERSION },
-                { "$expand", expand },
-                { "bypassRules", $"{bypassRules}" },
-                { "suppressNotifications", $"{suppressNotifications}" },
-                { "validateOnly", $"{validateOnly}" }
-            };
-
         private IEnumerable<ITfsWorkitem> GetTfsItemsFromResponse(IHttpResponse response)
         {
             if ((response != null) && (response.IsSuccess))
             {
-                var items = TfsWorkitemFactory.FromJsonItems(this, response.Content);
-
-                return items;
+                return TfsWorkitemFactory.FromJsonItems(this, response.Content);
             }
 
             return null;
@@ -154,6 +168,7 @@ namespace TfsClient
                 : (_tfsUrl + requestUrl);
 
             var response = _httpService.Get(url, requestParams);
+
             return GetTfsItemsFromResponse(response);
         }
 
@@ -166,6 +181,7 @@ namespace TfsClient
                 : (_tfsUrl + requestUrl);
 
             var response = await _httpService.GetAsync(url, requestParams);
+
             return GetTfsItemsFromResponse(response);
         }
 
@@ -228,7 +244,7 @@ namespace TfsClient
                 }
                 catch(Exception ex)
                 {
-                    throw ex;
+                    throw new TfsServiceClientException("TfsServiceClient: GetWorkitems exception", ex);
                 }
             }
 
@@ -255,15 +271,26 @@ namespace TfsClient
                 }
                 catch (Exception ex)
                 {
-                    throw ex;
+                    throw new TfsServiceClientException("TfsServiceClient: GetWorkitemsAsync exception", ex);
                 }
             }
 
             return resultItems;
         }
 
+        private Dictionary<string, string> MakeQueryParams(string expand, bool bypassRules,
+            bool suppressNotifications, bool validateOnly) => new Dictionary<string, string>()
+            {
+                { "api-version", API_VERSION },
+                { "$expand", expand },
+                { "bypassRules", $"{bypassRules}" },
+                { "suppressNotifications", $"{suppressNotifications}" },
+                { "validateOnly", $"{validateOnly}" }
+            };
+
         private (string, Dictionary<string, string>, object, Dictionary<string, string>) CreateWorkitemPrepareArgs(
-            string itemType, IReadOnlyDictionary<string, string> itemFields,
+            string itemType, 
+            IReadOnlyDictionary<string, string> itemFields, IEnumerable<ITfsWorkitemRelation> itemRelations,
             string expand, bool bypassRules,
             bool suppressNotifications, bool validateOnly)
         {
@@ -271,7 +298,6 @@ namespace TfsClient
 
             var queryParams = MakeQueryParams(expand, bypassRules, suppressNotifications, validateOnly);
 
-            // Media Types: "application/json-patch+json"
             var requestBody = itemFields
                 .Select(fld => new {
                     op = "add",
@@ -279,8 +305,28 @@ namespace TfsClient
                     @from = (string)null,
                     value = fld.Value
                 })
-                .ToList();
+                .ToList<object>();
 
+            if (itemRelations != null)
+            {
+                foreach(var relation in itemRelations)
+                {
+                    requestBody.Add(new
+                    {
+                        op = "add",
+                        path = $"/relations/-",
+                        @from = (string)null,
+                        value = new
+                        {
+                            rel = relation.RelationType,
+                            url = relation.Url,
+                            attributes = (string)null
+                        }
+                    });
+                }
+            }
+
+            // Media Types: "application/json-patch+json"
             var customHeaders = new Dictionary<string, string>()
             {
                 { "Content-Type", "application/json-patch+json" }
@@ -290,7 +336,8 @@ namespace TfsClient
         }
 
         // https://docs.microsoft.com/en-us/rest/api/azure/devops/wit/work%20items/create?view=azure-devops-rest-6.0
-        public ITfsWorkitem CreateWorkitem(string itemType, IReadOnlyDictionary<string, string> itemFields = null,
+        public ITfsWorkitem CreateWorkitem(string itemType, 
+            IReadOnlyDictionary<string, string> itemFields = null, IEnumerable<ITfsWorkitemRelation> itemRelations = null,
             string expand = "All", bool bypassRules = false,
             bool suppressNotifications = false, bool validateOnly = false)
         {
@@ -300,13 +347,13 @@ namespace TfsClient
             }
 
             (var requestUrl, var queryParams, var requestBody, var customHeaders) = CreateWorkitemPrepareArgs(
-                itemType, itemFields, expand, bypassRules, suppressNotifications, validateOnly
+                itemType, itemFields, itemRelations, expand, bypassRules, suppressNotifications, validateOnly
             );
 
             try
             {
                 var response = _httpService.PostJson(requestUrl, requestBody,
-                    customParams: queryParams, customHeaders: customHeaders);
+                    queryParams: queryParams, customHeaders: customHeaders);
 
                 return response.IsSuccess
                     ? TfsWorkitemFactory.FromJsonItem(this, response.Content)
@@ -314,11 +361,12 @@ namespace TfsClient
             }
             catch(Exception ex)
             {
-                throw ex;
+                throw new TfsServiceClientException("TfsServiceClient: CreateWorkitem exception", ex);
             }
         }
 
-        public async Task<ITfsWorkitem> CreateWorkitemAsync(string itemType, IReadOnlyDictionary<string, string> itemFields = null,
+        public async Task<ITfsWorkitem> CreateWorkitemAsync(string itemType, 
+            IReadOnlyDictionary<string, string> itemFields = null, IEnumerable<ITfsWorkitemRelation> itemRelations = null,
             string expand = "All", bool bypassRules = false,
             bool suppressNotifications = false, bool validateOnly = false)
         {
@@ -328,13 +376,13 @@ namespace TfsClient
             }
 
             (var requestUrl, var queryParams, var requestBody, var customHeaders) = CreateWorkitemPrepareArgs(
-                itemType, itemFields, expand, bypassRules, suppressNotifications, validateOnly
+                itemType, itemFields, itemRelations, expand, bypassRules, suppressNotifications, validateOnly
             );
 
             try
             {
                 var response = await _httpService.PostJsonAsync(requestUrl, requestBody,
-                    customParams: queryParams, customHeaders: customHeaders);
+                    queryParams: queryParams, customHeaders: customHeaders);
 
                 return response.IsSuccess
                     ? TfsWorkitemFactory.FromJsonItem(this, response.Content)
@@ -342,48 +390,30 @@ namespace TfsClient
             }
             catch (Exception ex)
             {
-                throw ex;
+                throw new TfsServiceClientException("TfsServiceClient: CreateWorkitemAsync exception", ex);
             }
         }
 
-        public ITfsWorkitem CreateWorkitem(WorkItemType itemType, IReadOnlyDictionary<string, string> itemFields = null)
+        public ITfsWorkitem CreateWorkitem(WorkItemType itemType, 
+            IReadOnlyDictionary<string, string> itemFields = null, IEnumerable<ITfsWorkitemRelation> itemRelations = null)
         {
             if(itemType == WorkItemType.Unknown)
             {
                 throw new ArgumentException("Type can't be unknown", "itemType");
             }
 
-            return CreateWorkitem(TfsWorkitemFactory.WI_TYPE_MAP[itemType], itemFields);
+            return CreateWorkitem(TfsWorkitemFactory.WI_TYPE_MAP[itemType], itemFields, itemRelations);
         }
 
-        public async Task<ITfsWorkitem> CreateWorkitemAsync(
-            WorkItemType itemType, IReadOnlyDictionary<string, string> itemFields = null)
+        public async Task<ITfsWorkitem> CreateWorkitemAsync(WorkItemType itemType,
+            IReadOnlyDictionary<string, string> itemFields = null, IEnumerable<ITfsWorkitemRelation> itemRelations = null)
         {
             if (itemType == WorkItemType.Unknown)
             {
                 throw new ArgumentException("Type can't be unknown", "itemType");
             }
 
-            return await CreateWorkitemAsync(TfsWorkitemFactory.WI_TYPE_MAP[itemType], itemFields);
-        }
-
-        public ITfsWorkitem CopyWorkitem(int sourceItemId, IReadOnlyDictionary<string, string> destinationItemFields = null)
-        {
-            var sourceItem = GetSingleWorkitem(sourceItemId);
-
-            return (sourceItem != null)
-                ? CopyWorkitem(sourceItem, destinationItemFields)
-                : null;
-        }
-
-        public async Task<ITfsWorkitem> CopyWorkitemAsync(int sourceItemId, 
-            IReadOnlyDictionary<string, string> destinationItemFields = null)
-        {
-            var sourceItem = await GetSingleWorkitemAsync(sourceItemId);
-
-            return (sourceItem != null)
-                ? await CopyWorkitemAsync(sourceItem, destinationItemFields)
-                : null;
+            return await CreateWorkitemAsync(TfsWorkitemFactory.WI_TYPE_MAP[itemType], itemFields, itemRelations);
         }
 
         private IReadOnlyDictionary<string, string> CopyWorkitemPrepareArgs(ITfsWorkitem sourceItem, 
@@ -463,6 +493,25 @@ namespace TfsClient
             return await CreateWorkitemAsync(itemTypeName, itemFields: fields);
         }
 
+        public ITfsWorkitem CopyWorkitem(int sourceItemId, IReadOnlyDictionary<string, string> destinationItemFields = null)
+        {
+            var sourceItem = GetSingleWorkitem(sourceItemId);
+
+            return (sourceItem != null)
+                ? CopyWorkitem(sourceItem, destinationItemFields)
+                : null;
+        }
+
+        public async Task<ITfsWorkitem> CopyWorkitemAsync(int sourceItemId,
+            IReadOnlyDictionary<string, string> destinationItemFields = null)
+        {
+            var sourceItem = await GetSingleWorkitemAsync(sourceItemId);
+
+            return (sourceItem != null)
+                ? await CopyWorkitemAsync(sourceItem, destinationItemFields)
+                : null;
+        }
+
         private (string, object, IReadOnlyDictionary<string, string>, IReadOnlyDictionary<string, string>)
             UpdateWorkitemFieldsPrepareAgrs(int workitemId, IReadOnlyDictionary<string, string> itemFields,
                 string expand, bool bypassRules,
@@ -503,8 +552,8 @@ namespace TfsClient
 
             try
             {
-                var response = _httpService.PatchJson(requestUrl, requestBody, 
-                    customParams: queryParams, customHeaders: customHeaders);
+                var response = _httpService.PatchJson(requestUrl, requestBody,
+                    queryParams: queryParams, customHeaders: customHeaders);
 
                 return response.IsSuccess
                     ? TfsWorkitemFactory.FromJsonItem(this, response.Content)
@@ -512,7 +561,7 @@ namespace TfsClient
             }
             catch(Exception ex)
             {
-                throw ex;
+                throw new TfsServiceClientException("TfsServiceClient: UpdateWOrkitemsFields exception", ex);
             }
         }
 
@@ -531,7 +580,7 @@ namespace TfsClient
             try
             {
                 var response = await _httpService.PatchJsonAsync(requestUrl, requestBody,
-                    customParams: queryParams, customHeaders: customHeaders);
+                    queryParams: queryParams, customHeaders: customHeaders);
 
                 return response.IsSuccess
                     ? TfsWorkitemFactory.FromJsonItem(this, response.Content)
@@ -539,7 +588,7 @@ namespace TfsClient
             }
             catch (Exception ex)
             {
-                throw ex;
+                throw new TfsServiceClientException("TfsServiceClient: UpdateWOrkitemsFieldsAsync exception", ex); ;
             }
         }
 
@@ -562,7 +611,7 @@ namespace TfsClient
                     value = new
                     {
                         rel = relationType,
-                        url = GetWorkitemUrl(destinationWorkitemId),
+                        url = $"{ServerUrl}{_tfsUrl}{WORKITEM_URL}/{destinationWorkitemId}",
                         attributes = relationAttributes
                     }
                 }
@@ -594,8 +643,8 @@ namespace TfsClient
 
             try
             {
-                var response = _httpService.PatchJson(requestUrl, requestBody, 
-                    customParams: queryParams, customHeaders: customHeaders);
+                var response = _httpService.PatchJson(requestUrl, requestBody,
+                    queryParams: queryParams, customHeaders: customHeaders);
 
                 return response.IsSuccess
                     ? TfsWorkitemFactory.FromJsonItem(this, response.Content)
@@ -603,7 +652,7 @@ namespace TfsClient
             }
             catch (Exception ex)
             {
-                throw ex;
+                throw new TfsServiceClientException("TfsServiceClient: AddRelationLink exception", ex);
             }
         }
 
@@ -625,7 +674,7 @@ namespace TfsClient
             try
             {
                 var response = await _httpService.PatchJsonAsync(requestUrl, requestBody,
-                    customParams: queryParams, customHeaders: customHeaders);
+                    queryParams: queryParams, customHeaders: customHeaders);
 
                 return response.IsSuccess
                     ? TfsWorkitemFactory.FromJsonItem(this, response.Content)
@@ -633,7 +682,7 @@ namespace TfsClient
             }
             catch (Exception ex)
             {
-                throw ex;
+                throw new TfsServiceClientException("TfsServiceClient: AddRelationLinkAsync exception", ex); ;
             }
         }
 
@@ -696,8 +745,8 @@ namespace TfsClient
 
             try
             {
-                var response = _httpService.PatchJson(requestUrl, requestBody, 
-                    customParams: queryParams, customHeaders: customHeaders);
+                var response = _httpService.PatchJson(requestUrl, requestBody,
+                    queryParams: queryParams, customHeaders: customHeaders);
 
                 return response.IsSuccess
                     ? TfsWorkitemFactory.FromJsonItem(this, response.Content)
@@ -705,7 +754,7 @@ namespace TfsClient
             }
             catch (Exception ex)
             {
-                throw ex;
+                throw new TfsServiceClientException("TfsServiceClient: RemoveRelationLink exception", ex);
             }
         }
 
@@ -720,7 +769,7 @@ namespace TfsClient
             try
             {
                 var response = await _httpService.PatchJsonAsync(requestUrl, requestBody,
-                    customParams: queryParams, customHeaders: customHeaders);
+                    queryParams: queryParams, customHeaders: customHeaders);
 
                 return response.IsSuccess
                     ? TfsWorkitemFactory.FromJsonItem(this, response.Content)
@@ -728,7 +777,7 @@ namespace TfsClient
             }
             catch (Exception ex)
             {
-                throw ex;
+                throw new TfsServiceClientException("TfsServiceClient: RemoveRelationLinkAsync exception", ex); ;
             }
         }
 
@@ -764,7 +813,7 @@ namespace TfsClient
             }
             catch(Exception ex)
             {
-                throw ex;
+                throw new TfsServiceClientException("TfsServiceClient: RunSavedQuery exception", ex);
             }
         }
 
@@ -787,7 +836,7 @@ namespace TfsClient
             }
             catch (Exception ex)
             {
-                throw ex;
+                throw new TfsServiceClientException("TfsServiceClient: RunSavedQueryAsync exception", ex); ;
             }
         }
 
@@ -824,7 +873,8 @@ namespace TfsClient
 
             try
             {
-                var response = _httpService.PostJson(requestUrl, requestBody, customParams: queryParams);
+                var response = _httpService.PostJson(requestUrl, requestBody, 
+                    queryParams: queryParams);
 
                 return response.IsSuccess
                     ? TfsWiqlFactory.FromContentResponse(this, response.Content)
@@ -832,7 +882,7 @@ namespace TfsClient
             }
             catch (Exception ex)
             {
-                throw ex;
+                throw new TfsServiceClientException("TfsServiceClient: RunWiql exception", ex);
             }
         }
 
@@ -847,7 +897,8 @@ namespace TfsClient
 
             try
             {
-                var response = await _httpService.PostJsonAsync(requestUrl, requestBody, customParams: queryParams);
+                var response = await _httpService.PostJsonAsync(requestUrl, requestBody, 
+                    queryParams: queryParams);
 
                 return response.IsSuccess
                     ? TfsWiqlFactory.FromContentResponse(this, response.Content)
@@ -855,7 +906,7 @@ namespace TfsClient
             }
             catch (Exception ex)
             {
-                throw ex;
+                throw new TfsServiceClientException("TfsServiceClient: RunWiqlAsync exception", ex);
             }
         }
 
@@ -871,7 +922,7 @@ namespace TfsClient
 
             try
             {
-                var response = _httpService.Get(requestUrl, customParams: queryParams);
+                var response = _httpService.Get(requestUrl, queryParams: queryParams);
 
                 return response.IsSuccess
                     ? TfsChangesetFactory.FromResponse(this, response.Content)
@@ -879,7 +930,7 @@ namespace TfsClient
             }
             catch(Exception ex)
             {
-                throw ex;
+                throw new TfsServiceClientException("TfsServiceClient: GetChangeset exception", ex);
             }
         }
     }

@@ -27,40 +27,44 @@ namespace TfsClient.HttpService
         void Authentificate(string personalAccessToken);
 
         IHttpResponse Get(string resource,
-            IReadOnlyDictionary<string, string> customParams = null,
+            IReadOnlyDictionary<string, string> queryParams = null,
             IReadOnlyDictionary<string, string> customHeaders = null);
         Task<IHttpResponse> GetAsync(string resource,
-            IReadOnlyDictionary<string, string> customParams = null,
+            IReadOnlyDictionary<string, string> queryParams = null,
             IReadOnlyDictionary<string, string> customHeaders = null);
 
         IHttpResponse Post(string resource,
-            IReadOnlyDictionary<string, string> customParams = null,
+            IReadOnlyDictionary<string, string> data = null,
+            IReadOnlyDictionary<string, string> queryParams = null,
             IReadOnlyDictionary<string, string> customHeaders = null);
         Task<IHttpResponse> PostAsync(string resource,
-            IReadOnlyDictionary<string, string> customParams = null,
+            IReadOnlyDictionary<string, string> data = null,
+            IReadOnlyDictionary<string, string> queryParams = null,
             IReadOnlyDictionary<string, string> customHeaders = null);
         IHttpResponse PostJson(string resource,
             object requestBody,
-            IReadOnlyDictionary<string, string> customParams = null,
+            IReadOnlyDictionary<string, string> queryParams = null,
             IReadOnlyDictionary<string, string> customHeaders = null);
         Task<IHttpResponse> PostJsonAsync(string resource,
             object requestBody,
-            IReadOnlyDictionary<string, string> customParams = null,
+            IReadOnlyDictionary<string, string> queryParams = null,
             IReadOnlyDictionary<string, string> customHeaders = null);
 
         IHttpResponse Patch(string resource,
-            IReadOnlyDictionary<string, string> customParams = null,
+            IReadOnlyDictionary<string, string> data = null,
+            IReadOnlyDictionary<string, string> queryParams = null,
             IReadOnlyDictionary<string, string> customHeaders = null);
         Task<IHttpResponse> PatchAsync(string resource,
-            IReadOnlyDictionary<string, string> customParams = null,
+            IReadOnlyDictionary<string, string> data = null,
+            IReadOnlyDictionary<string, string> queryParams = null,
             IReadOnlyDictionary<string, string> customHeaders = null);
         IHttpResponse PatchJson(string resource,
             object requestBody,
-            IReadOnlyDictionary<string, string> customParams = null,
+            IReadOnlyDictionary<string, string> queryParams = null,
             IReadOnlyDictionary<string, string> customHeaders = null);
         Task<IHttpResponse> PatchJsonAsync(string resource,
             object requestBody,
-            IReadOnlyDictionary<string, string> customParams = null,
+            IReadOnlyDictionary<string, string> queryParams = null,
             IReadOnlyDictionary<string, string> customHeaders = null);
     }
 }

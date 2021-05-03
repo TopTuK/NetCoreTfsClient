@@ -42,12 +42,16 @@ namespace TfsClient
             bool suppressNotifications = false, bool validateOnly = false) =>
             _tfsService.UpdateWorkitemFields(workitemId, itemFields, expand, bypassRules, suppressNotifications, validateOnly);
 
-        public ITfsWorkitem CreateWorkitem(string itemType, IReadOnlyDictionary<string, string> itemFields = null,
+        public ITfsWorkitem CreateWorkitem(string itemType,
+            IReadOnlyDictionary<string, string> itemFields = null, IEnumerable<ITfsWorkitemRelation> itemRelations = null,
             string expand = "All", bool bypassRules = false,
             bool suppressNotifications = false, bool validateOnly = false) =>
-            _tfsService.CreateWorkitem(itemType, itemFields, expand, bypassRules, suppressNotifications, validateOnly);
-        public ITfsWorkitem CreateWorkitem(WorkItemType itemType, IReadOnlyDictionary<string, string> itemFields = null) =>
-            _tfsService.CreateWorkitem(itemType, itemFields);
+            _tfsService.CreateWorkitem(itemType, 
+                itemFields, itemRelations, 
+                expand, bypassRules, suppressNotifications, validateOnly);
+        public ITfsWorkitem CreateWorkitem(WorkItemType itemType, 
+            IReadOnlyDictionary<string, string> itemFields = null, IEnumerable<ITfsWorkitemRelation> itemRelations = null) =>
+            _tfsService.CreateWorkitem(itemType, itemFields, itemRelations);
 
         public ITfsWorkitem CopyWorkitem(int sourceItemId, IReadOnlyDictionary<string, string> destinationItemFields = null) =>
             _tfsService.CopyWorkitem(sourceItemId, destinationItemFields);
@@ -83,14 +87,17 @@ namespace TfsClient
             IReadOnlyDictionary<string, string> destinationItemFields = null) =>
             _tfsService.CopyWorkitemAsync(sourceItem, destinationItemFields);
 
-        public Task<ITfsWorkitem> CreateWorkitemAsync(string itemType, IReadOnlyDictionary<string, string> itemFields = null,
+        public Task<ITfsWorkitem> CreateWorkitemAsync(string itemType, 
+            IReadOnlyDictionary<string, string> itemFields = null, IEnumerable<ITfsWorkitemRelation> itemRelations = null,
             string expand = "All", bool bypassRules = false,
             bool suppressNotifications = false, bool validateOnly = false) =>
-            _tfsService.CreateWorkitemAsync(itemType, itemFields, expand, bypassRules, suppressNotifications, validateOnly);
+            _tfsService.CreateWorkitemAsync(itemType, 
+                itemFields, itemRelations, 
+                expand, bypassRules, suppressNotifications, validateOnly);
 
         public Task<ITfsWorkitem> CreateWorkitemAsync(WorkItemType itemType,
-            IReadOnlyDictionary<string, string> itemFields = null) =>
-            _tfsService.CreateWorkitemAsync(itemType, itemFields);
+            IReadOnlyDictionary<string, string> itemFields = null, IEnumerable<ITfsWorkitemRelation> itemRelations = null) =>
+            _tfsService.CreateWorkitemAsync(itemType, itemFields, itemRelations);
 
         public Task<ITfsWorkitem> GetSingleWorkitemAsync(int id, IEnumerable<string> fields = null, string expand = "All") =>
             _tfsService.GetSingleWorkitemAsync(id, fields, expand);
