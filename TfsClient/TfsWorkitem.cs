@@ -194,8 +194,8 @@ namespace TfsClient
                     {
                         if (jField.Type == JTokenType.String) return jField.ToObject<string>();
 
-                        return (jField["displayName"] != null)
-                            ? jField["displayName"].ToObject<string>()
+                        return jField.Type == JTokenType.Object
+                            ? jField["displayName"]?.ToObject<string>()
                             : jField.ToString();
                     }
 
