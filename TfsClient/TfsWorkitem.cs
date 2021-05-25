@@ -172,8 +172,8 @@ namespace TfsClient
                     {
                         if (fldValue.Type == JTokenType.String) return fldValue.ToObject<string>();
 
-                        return (fldValue["displayName"] != null) 
-                            ? fldValue["displayName"].ToObject<string>() 
+                        return fldValue.Type == JTokenType.Object
+                            ? fldValue["displayName"]?.ToObject<string>()
                             : fldValue.ToString();
                     }
 
