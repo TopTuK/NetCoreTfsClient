@@ -79,8 +79,25 @@ namespace TfsClient
         /// Extension method for get <see cref="IAsyncTfsServiceClientWorkitemFacade"/> facade
         /// </summary>
         /// <returns><see cref="IAsyncTfsServiceClientWorkitemFacade"/></returns>
-        public static IAsyncTfsServiceClientWorkitemFacade GetTfsWorkitemServiceAsyncFacade(this ITfsServiceClient tfsServiceClient) =>
+        public static IAsyncTfsServiceClientWorkitemFacade GetTfsWorkitemServiceAsyncFacade(
+            this ITfsServiceClient tfsServiceClient) =>
             new AsyncTfsServiceClientWorkitemFacade(tfsServiceClient);
+
+        /// <summary>
+        /// Extension method for get <see cref="ITfsServiceClientTeamProjectsFacade"/> facade
+        /// </summary>
+        /// <returns><see cref="ITfsServiceClientTeamProjectsFacade"/></returns>
+        public static ITfsServiceClientTeamProjectsFacade GetTfsTeamProjectsFacade(
+            this ITfsServiceClient tfsServiceClient) =>
+            new TfsServiceClientTeamProjectsFacade(tfsServiceClient);
+
+        /// <summary>
+        /// Extension method for get <see cref="IAsyncTfsServiceClientTeamProjectsFacade"/> facade
+        /// </summary>
+        /// <returns><see cref="IAsyncTfsServiceClientTeamProjectsFacade"/></returns>
+        public static IAsyncTfsServiceClientTeamProjectsFacade GetTfsTeamProjectsAsyncFacade(
+            this ITfsServiceClient tfsServiceClient) =>
+            new AsyncTfsServiceClientTeamProjectsFacade(tfsServiceClient);
     }
 
     internal class TfsServiceClient : ITfsServiceClient
@@ -90,6 +107,9 @@ namespace TfsClient
         private const string WIQL_URL = @"wit/wiql";
         private const string QUERY_URL = @"wit/queries";
         private const string CHANGESET_URL = @"tfvc/changesets";
+        private const string PROJECTS_URL = @"projects";
+        private const string TEAMS_URL = @"teams";
+        private const string PROJECT_TEAM_MEMBERS = @"members";
 
         private readonly IHttpService _httpService;
         private readonly string _tfsUrl;
@@ -147,6 +167,280 @@ namespace TfsClient
         public void Authentificate(string personalAccessToken)
         {
             _httpService.Authentificate(personalAccessToken);
+        }
+
+        public IEnumerable<ITfsTeamProject> GetTeamProjects(int skip = 0)
+        {
+            var requestUrl = $"{_tfsUrl}{PROJECTS_URL}";
+
+            var queryParams = new Dictionary<string, string>
+            {
+                { "api-version", API_VERSION },
+                { "$skip", skip.ToString() }
+            };
+
+            try
+            {
+                List<ITfsTeamProject> teamProjects = new List<ITfsTeamProject>();
+                bool hasNext = false;
+
+                do
+                {
+                    hasNext = false;
+
+                    var response = _httpService.Get(requestUrl, queryParams);
+                    if ((response != null) && (response.IsSuccess))
+                    {
+                        var items = TfsTeamProjectFactory.FromJsonItems(response.Content);
+                        if (items != null)
+                        {
+                            teamProjects.AddRange(items);
+                            queryParams["$skip"] = teamProjects.Count.ToString();
+                            hasNext = true;
+                        }
+                    }
+                }
+                while (hasNext);
+
+                return teamProjects;
+            }
+            catch (Exception ex)
+            {
+                throw new TfsServiceClientException("TfsServiceClient: GetTeamProjects exception", ex);
+            }
+        }
+
+        public async Task<IEnumerable<ITfsTeamProject>> GetTeamProjectsAsync(int skip = 0)
+        {
+            var requestUrl = $"{_tfsUrl}{PROJECTS_URL}";
+
+            var queryParams = new Dictionary<string, string>
+            {
+                { "api-version", API_VERSION },
+                { "$skip", skip.ToString() }
+            };
+
+            try
+            {
+                List<ITfsTeamProject> teamProjects = new List<ITfsTeamProject>();
+                bool hasNext = false;
+
+                do
+                {
+                    hasNext = false;
+
+                    var response = await _httpService.GetAsync(requestUrl, queryParams);
+                    if ((response != null) && (response.IsSuccess))
+                    {
+                        var items = TfsTeamProjectFactory.FromJsonItems(response.Content);
+                        if (items != null)
+                        {
+                            teamProjects.AddRange(items);
+                            queryParams["$skip"] = teamProjects.Count.ToString();
+                            hasNext = true;
+                        }
+                    }
+                }
+                while (hasNext);
+
+                return teamProjects;
+            }
+            catch (Exception ex)
+            {
+                throw new TfsServiceClientException("TfsServiceClient: GetTeamProjects exception", ex);
+            }
+        }
+
+        public IEnumerable<ITfsTeam> GetAllTfsTeams(bool currentUser = false)
+        {
+            var requestUrl = $"{_tfsUrl}{TEAMS_URL}";
+
+            var queryParams = new Dictionary<string, string>
+            {
+                { "api-version", API_VERSION },
+                { "$mine", $"{currentUser}" }
+            };
+
+            try
+            {
+                var response = _httpService.Get(requestUrl, queryParams);
+                if ((response != null) && (response.IsSuccess))
+                {
+                   return TfsTeamFactory.FromJsonItems(response.Content);
+                }
+
+                return null;
+            }
+            catch (Exception ex)
+            {
+                throw new TfsServiceClientException("TfsServiceClient: GetAllTfsTeams exception", ex);
+            }
+        }
+
+        public async Task<IEnumerable<ITfsTeam>> GetAllTfsTeamsAsync(bool currentUser = false)
+        {
+            var requestUrl = $"{_tfsUrl}{TEAMS_URL}";
+
+            var queryParams = new Dictionary<string, string>
+            {
+                { "api-version", API_VERSION },
+                { "$mine", $"{currentUser}" }
+            };
+
+            try
+            {
+                var response = await _httpService.GetAsync(requestUrl, queryParams);
+                if ((response != null) && (response.IsSuccess))
+                {
+                    return TfsTeamFactory.FromJsonItems(response.Content);
+                }
+
+                return null;
+            }
+            catch (Exception ex)
+            {
+                throw new TfsServiceClientException("TfsServiceClient: GetAllTfsTeamsAsync exception", ex);
+            }
+        }
+
+        private string GetProjectTeamsUrl(string projectId) => $"{_tfsUrl}{PROJECTS_URL}/{projectId}/{TEAMS_URL}";
+
+        public IEnumerable<ITfsTeam> GetProjectTeams(ITfsTeamProject tfsProject, bool currentUser = false)
+        {
+            if ((tfsProject == null) || (tfsProject.Id == null))
+            {
+                throw new ArgumentNullException("tfsProject", "Tfs Team Project argument is null");
+            }
+
+            var requestUrl = GetProjectTeamsUrl(tfsProject.Id);
+
+            var queryParams = new Dictionary<string, string>()
+            {
+                { "api-version", API_VERSION },
+                { "$mine", $"{currentUser}" }
+            };
+
+            try
+            {
+                var response = _httpService.Get(requestUrl, queryParams);
+                if ((response != null) && (response.IsSuccess))
+                {
+                    return TfsTeamFactory.FromJsonItems(response.Content);
+                }
+
+                return null;
+            }
+            catch (Exception ex)
+            {
+                throw new TfsServiceClientException("TfsServiceClient: GetProjectTeams exception", ex);
+            }
+        }
+
+        public async Task<IEnumerable<ITfsTeam>> GetProjectTeamsAsync(
+            ITfsTeamProject tfsProject, bool currentUser = false)
+        {
+            if ((tfsProject == null) || (tfsProject.Id == null))
+            {
+                throw new ArgumentNullException("tfsProject", "Tfs Team Project argument is null");
+            }
+
+            var requestUrl = GetProjectTeamsUrl(tfsProject.Id);
+
+            var queryParams = new Dictionary<string, string>()
+            {
+                { "api-version", API_VERSION },
+                { "$mine", $"{currentUser}" }
+            };
+
+            try
+            {
+                var response = await _httpService.GetAsync(requestUrl, queryParams);
+                if ((response != null) && (response.IsSuccess))
+                {
+                    return TfsTeamFactory.FromJsonItems(response.Content);
+                }
+
+                return null;
+            }
+            catch (Exception ex)
+            {
+                throw new TfsServiceClientException("TfsServiceClient: GetProjectTeams exception", ex);
+            }
+        }
+
+        // GET {tfsUrl}/{organization}/_apis/projects/{projectId}/teams/{teamId}/members?api-version=6.0
+        private string GetProjectTeamMembersUrl(string projectId, string teamId) =>
+            $"{_tfsUrl}{PROJECTS_URL}/{projectId}/{TEAMS_URL}/{teamId}/{PROJECT_TEAM_MEMBERS}";
+
+        public IEnumerable<ITfsTeamMember> GetProjectTeamMembers(ITfsTeamProject tfsProject, ITfsTeam tfsTeam)
+        {
+            if ((tfsProject == null) || (tfsProject.Id == null))
+            {
+                throw new ArgumentNullException("tfsProject", "TFS Project can't be null");
+            }
+
+            if ((tfsTeam == null) || (tfsTeam.Id == null))
+            {
+                throw new ArgumentNullException("tfsTeam", "TFS Team can't be null");
+            }
+
+            var requestUrl = GetProjectTeamMembersUrl(tfsProject.Id, tfsTeam.Id);
+
+            var queryParams = new Dictionary<string, string>
+            {
+                { "api-version", API_VERSION }
+            };
+
+            try
+            {
+                var response = _httpService.Get(requestUrl, queryParams);
+                if ((response != null) && (response.IsSuccess))
+                {
+                    return TfsTeamFactory.FromJsonTeamMembers(tfsTeam, response.Content);
+                }
+
+                return null;
+            }
+            catch (Exception ex)
+            {
+                throw new TfsServiceClientException("TfsServiceClient: GetProjectTeamMembers exception", ex);
+            }
+        }
+
+        public async Task<IEnumerable<ITfsTeamMember>> GetProjectTeamMembersAsync(
+            ITfsTeamProject tfsProject, ITfsTeam tfsTeam)
+        {
+            if ((tfsProject == null) || (tfsProject.Id == null))
+            {
+                throw new ArgumentNullException("tfsProject", "TFS Project can't be null");
+            }
+
+            if ((tfsTeam == null) || (tfsTeam.Id == null))
+            {
+                throw new ArgumentNullException("tfsTeam", "TFS Team can't be null");
+            }
+
+            var requestUrl = GetProjectTeamMembersUrl(tfsProject.Id, tfsTeam.Id);
+
+            var queryParams = new Dictionary<string, string>
+            {
+                { "api-version", API_VERSION }
+            };
+
+            try
+            {
+                var response = await _httpService.GetAsync(requestUrl, queryParams);
+                if ((response != null) && (response.IsSuccess))
+                {
+                    return TfsTeamFactory.FromJsonTeamMembers(tfsTeam, response.Content);
+                }
+
+                return null;
+            }
+            catch (Exception ex)
+            {
+                throw new TfsServiceClientException("TfsServiceClient: GetProjectTeamMembersAsync exception", ex);
+            }
         }
 
         private IEnumerable<ITfsWorkitem> GetTfsItemsFromResponse(IHttpResponse response)

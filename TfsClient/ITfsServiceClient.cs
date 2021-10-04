@@ -26,7 +26,7 @@ namespace TfsClient
         string Collection { get; }
 
         /// <summary>
-        /// Get Project Name
+        /// Get Current Project Name
         /// </summary>
         /// <example>
         /// For example: if you set project name as DefaultCollection/MyProject this property return MyProject
@@ -48,6 +48,71 @@ namespace TfsClient
         void Authentificate(string personalAccessToken);
 
         /// <summary>
+        /// Get all team projects from current collection
+        /// </summary>
+        /// <param name="skip">Numbers of skipped items</param>
+        /// <returns>Collection of Tfs Team Project</returns>
+        /// <exception cref="TfsServiceClientException"></exception>
+        IEnumerable<ITfsTeamProject> GetTeamProjects(int skip = 0);
+
+        /// <summary>
+        /// Async get all team projects from current collection
+        /// </summary>
+        /// <param name="skip">Numbers of skipped items</param>
+        /// <returns></returns>
+        /// <exception cref="TfsServiceClientException"></exception>
+        Task<IEnumerable<ITfsTeamProject>> GetTeamProjectsAsync(int skip = 0);
+
+        /// <summary>
+        /// Get all TFS teams.
+        /// https://docs.microsoft.com/en-us/rest/api/azure/devops/core/teams/get-all-teams?view=azure-devops-rest-6.0
+        /// </summary>
+        /// <param name="currentUser">If true, then return all teams requesting user is member. Otherwise return all teams user has read access.</param>
+        /// <returns>Collection of Tfs Teams</returns>
+        IEnumerable<ITfsTeam> GetAllTfsTeams(bool currentUser = false);
+        /// <summary>
+        /// Async get all TFS teams.
+        /// https://docs.microsoft.com/en-us/rest/api/azure/devops/core/teams/get-all-teams?view=azure-devops-rest-6.0
+        /// </summary>
+        /// <param name="currentUser">If true, then return all teams requesting user is member. Otherwise return all teams user has read access.</param>
+        /// <returns>Collection of Tfs Teams</returns>
+        /// <exception cref="TfsServiceClientException"></exception>
+        Task<IEnumerable<ITfsTeam>> GetAllTfsTeamsAsync(bool currentUser = false);
+
+        /// <summary>
+        /// Sync get TFS teams for project
+        /// </summary>
+        /// <param name="tfsProject">TFS Project. Can't be null</param>
+        /// <param name="currentUser">If true return all the teams requesting user is member, otherwise return all the teams user has read access.</param>
+        /// <returns>Collection of Tfs Teams for given TFS project</returns>
+        IEnumerable<ITfsTeam> GetProjectTeams(ITfsTeamProject tfsProject, bool currentUser = false);
+        /// <summary>
+        /// Async get TFS teams for project
+        /// </summary>
+        /// <param name="tfsProject">TFS Project. Can't be null</param>
+        /// <param name="currentUser">If true return all the teams requesting user is member, otherwise return all the teams user has read access.</param>
+        /// <returns>Collection of Tfs Teams for given TFS project</returns>
+        /// <exception cref="TfsServiceClientException"></exception>
+        Task<IEnumerable<ITfsTeam>> GetProjectTeamsAsync(ITfsTeamProject tfsProject, bool currentUser = false);
+
+        /// <summary>
+        /// Sync get TFS Team Project members
+        /// https://docs.microsoft.com/en-us/rest/api/azure/devops/core/teams/get-team-members-with-extended-properties?view=azure-devops-rest-6.0
+        /// </summary>
+        /// <param name="tfsProject">TFS Project</param>
+        /// <param name="tfsTeam">TFS Team</param>
+        /// <returns>Collection of TFS team members</returns>
+        IEnumerable<ITfsTeamMember> GetProjectTeamMembers(ITfsTeamProject tfsProject, ITfsTeam tfsTeam);
+        /// <summary>
+        /// Async get TFS Team Project members
+        /// https://docs.microsoft.com/en-us/rest/api/azure/devops/core/teams/get-team-members-with-extended-properties?view=azure-devops-rest-6.0
+        /// </summary>
+        /// <param name="tfsProject">TFS Project</param>
+        /// <param name="tfsTeam">TFS Team</param>
+        /// <returns>Collection of TFS team members</returns>
+        Task<IEnumerable<ITfsTeamMember>> GetProjectTeamMembersAsync(ITfsTeamProject tfsProject, ITfsTeam tfsTeam);
+
+        /// <summary>
         /// Get single workitem by ID
         /// https://docs.microsoft.com/en-us/rest/api/azure/devops/wit/work%20items/get%20work%20item?view=azure-devops-rest-6.0
         /// </summary>
@@ -56,8 +121,7 @@ namespace TfsClient
         /// <param name="expand">The expand parameters for work item attributes. Possible options are { None, Relations, Fields, Links, All }.</param>
         /// <returns>Return single wokitem with properties</returns>
         /// <exception cref="TfsServiceClientException"></exception>
-        ITfsWorkitem GetSingleWorkitem(int id, 
-            IEnumerable<string> fields = null, string expand = "All");
+        ITfsWorkitem GetSingleWorkitem(int id, IEnumerable<string> fields = null, string expand = "All");
 
         /// <summary>
         /// Async get single workitem
@@ -154,6 +218,80 @@ namespace TfsClient
 
         ITfsWiqlResult RunWiql(string query, int maxTop = -1);
         Task<ITfsWiqlResult> RunWiqlAsync(string query, int maxTop = -1);
+    }
+
+    public interface ITfsServiceClientTeamProjectsFacade
+    {
+        /// <summary>
+        /// Get all team projects from current collection
+        /// </summary>
+        /// <param name="skip">Numbers of skipped items</param>
+        /// <returns>Collection of Tfs Team Project</returns>
+        /// <exception cref="TfsServiceClientException"></exception>
+        IEnumerable<ITfsTeamProject> GetTeamProjects(int skip = 0);
+
+        /// <summary>
+        /// Get all TFS teams.
+        /// https://docs.microsoft.com/en-us/rest/api/azure/devops/core/teams/get-all-teams?view=azure-devops-rest-6.0
+        /// </summary>
+        /// <param name="currentUser">If true, then return all teams requesting user is member. Otherwise return all teams user has read access.</param>
+        /// <returns>Collection of Tfs Teams</returns>
+        IEnumerable<ITfsTeam> GetAllTfsTeams(bool currentUser = false);
+
+        /// <summary>
+        /// Sync get TFS teams for project
+        /// </summary>
+        /// <param name="tfsProject">TFS Project. Can't be null</param>
+        /// <param name="currentUser">If true return all the teams requesting user is member, otherwise return all the teams user has read access.</param>
+        /// <returns>Collection of Tfs Teams for given TFS project</returns>
+        IEnumerable<ITfsTeam> GetProjectTeams(ITfsTeamProject tfsProject, bool currentUser = false);
+
+        /// <summary>
+        /// Sync get TFS Team Project members
+        /// https://docs.microsoft.com/en-us/rest/api/azure/devops/core/teams/get-team-members-with-extended-properties?view=azure-devops-rest-6.0
+        /// </summary>
+        /// <param name="tfsProject">TFS Project</param>
+        /// <param name="tfsTeam">TFS Team</param>
+        /// <returns>Collection of TFS team members</returns>
+        IEnumerable<ITfsTeamMember> GetProjectTeamMembers(ITfsTeamProject tfsProject, ITfsTeam tfsTeam);
+    }
+
+    public interface IAsyncTfsServiceClientTeamProjectsFacade
+    {
+        /// <summary>
+        /// Async get all team projects from current collection
+        /// </summary>
+        /// <param name="skip">Numbers of skipped items</param>
+        /// <returns></returns>
+        /// <exception cref="TfsServiceClientException"></exception>
+        Task<IEnumerable<ITfsTeamProject>> GetTeamProjectsAsync(int skip = 0);
+
+        /// <summary>
+        /// Async get all TFS teams.
+        /// https://docs.microsoft.com/en-us/rest/api/azure/devops/core/teams/get-all-teams?view=azure-devops-rest-6.0
+        /// </summary>
+        /// <param name="currentUser">If true, then return all teams requesting user is member. Otherwise return all teams user has read access.</param>
+        /// <returns>Collection of Tfs Teams</returns>
+        /// <exception cref="TfsServiceClientException"></exception>
+        Task<IEnumerable<ITfsTeam>> GetAllTfsTeamsAsync(bool currentUser = false);
+
+        /// <summary>
+        /// Async get TFS teams for project
+        /// </summary>
+        /// <param name="tfsProject">TFS Project. Can't be null</param>
+        /// <param name="currentUser">If true return all the teams requesting user is member, otherwise return all the teams user has read access.</param>
+        /// <returns>Collection of Tfs Teams for given TFS project</returns>
+        /// <exception cref="TfsServiceClientException"></exception>
+        Task<IEnumerable<ITfsTeam>> GetProjectTeamsAsync(ITfsTeamProject tfsProject, bool currentUser = false);
+
+        /// <summary>
+        /// Async get TFS Team Project members
+        /// https://docs.microsoft.com/en-us/rest/api/azure/devops/core/teams/get-team-members-with-extended-properties?view=azure-devops-rest-6.0
+        /// </summary>
+        /// <param name="tfsProject">TFS Project</param>
+        /// <param name="tfsTeam">TFS Team</param>
+        /// <returns>Collection of TFS team members</returns>
+        Task<IEnumerable<ITfsTeamMember>> GetProjectTeamMembersAsync(ITfsTeamProject tfsProject, ITfsTeam tfsTeam);
     }
 
     public interface ITfsServiceClientWorkitemFacade

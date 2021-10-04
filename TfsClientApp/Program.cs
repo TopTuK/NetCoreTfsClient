@@ -34,14 +34,34 @@ namespace TfsClientApp
             var tfsService = TfsServiceClientFactory.CreateTfsServiceClient(tfsServerUrl, tfsCollection,
                 personalAccessToken);
 
+            DisplayTeamProjects(tfsService);
+
             //DisplayWiqlQueryByIdResult(tfsService);
+            /*
             var item = tfsService.GetSingleWorkitem(1);
             if (item != null)
             {
                 Console.WriteLine($"{item.Id} {item["System.Title"]} {item["System.AssignedTo"]}");
             }
+            */
 
             Console.WriteLine("Meow!");
+        }
+
+        private static void DisplayTeamProjects(ITfsServiceClient tfsClient)
+        {
+            Console.WriteLine(LINE_SEPARATOR);
+
+            var teamProjects = tfsClient.GetTeamProjects();
+            if (teamProjects != null)
+            {
+                foreach(var tp in teamProjects)
+                {
+                    Console.WriteLine($"Team: {tp.Name} Desciption: {tp.Description}");
+                }
+            }
+
+            Console.WriteLine(LINE_SEPARATOR);
         }
 
         private static void DisplayWiqlQueryByIdResult(ITfsServiceClient tfsClient)
