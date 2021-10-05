@@ -101,6 +101,7 @@ namespace TfsClient
             public string ItemTypeName { get; }
             public string Url { get; }
             public int Id { get; }
+            public int Rev { get; }
             public IReadOnlyList<ITfsWorkitemRelation> Relations => _relations;
 
             public IReadOnlyCollection<string> FieldNames => _fields.Keys;
@@ -222,6 +223,7 @@ namespace TfsClient
 
                 Url = jsonItem["url"].Value<string>();
                 Id = jsonItem["id"].Value<int>();
+                Rev = jsonItem["rev"].Value<int>();
 
                 var jsonFields = jsonItem["fields"]?.ToObject<JObject>();
                 if((jsonFields != null) && (jsonFields.HasValues))

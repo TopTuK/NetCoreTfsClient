@@ -53,6 +53,7 @@ namespace TfsClient
         string Url { get; }
 
         int Id { get; }
+        int Rev { get; }
         string Title { get; }
         string State { get; }
         string Reason { get; }
